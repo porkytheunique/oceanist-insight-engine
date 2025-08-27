@@ -1,8 +1,10 @@
 import os
 import json
+import requests
+import feedparser
 from datetime import datetime
-from pygooglenews import GoogleNews
 from difflib import SequenceMatcher
+from urllib.parse import quote_plus
 
 # --- Configuration ---
 CONFIG_FILE = 'config.json'
@@ -29,13 +31,29 @@ def get_keywords_for_today():
 
 def fetch_news_articles(keywords):
     """
-    Fetches news articles from the last 48 hours using the given keywords.
+    Fetches news articles directly from Google's RSS feed.
     """
-    gn = GoogleNews()
+    # Build the search query
     query = f'({" OR ".join(keywords)}) AND ("study" OR "research" OR "report")'
-    print(f"🔎 Searching for news with query: {query}")
-    search_results = gn.search(query, when='2d')
-    entries = search_results.get('entries', [])[:5]
+    encoded_query = quote_plus(query) # Safely encode the query for a URL
+    
+    # Construct the Google News RSS feed URL
+    # We add 'when=2d' to get news from the last 2 days
+    url = f"https://news.google.com/rss/search?q={encoded_query}&when=2d&hl=en-US&gl=US&ceid=US:en"
+    
+    print(f"🔎 Fetching news from RSS feed URL...")
+    
+    # Fetch the RSS feed using requests
+    response = requests.get(url)
+    if response.status_code != 200:
+        print(f"❌ Failed to fetch RSS feed. Status code: {response.status_code}")
+        return []
+
+    # Parse the XML content of the response
+    feed = feedparser.parse(response.content)
+    
+    # We only need the top 5 most relevant articles
+    entries = feed.get('entries', [])[:5]
     print(f"📰 Found {len(entries)} potential articles in the top 5 results.")
     return entries
 
@@ -53,16 +71,18 @@ def find_unique_article(articles):
     print(f"📚 Checking against {len(previous_headlines)} previously published headlines in '{LOG_FILE}'.")
     
     for article in articles:
+        # The article object from feedparser is slightly different, we use article.title
+        title_to_check = article.title
         is_duplicate = False
         for prev_headline in previous_headlines:
-            similarity = SequenceMatcher(None, article.title, prev_headline).ratio()
+            similarity = SequenceMatcher(None, title_to_check, prev_headline).ratio()
             if similarity > SIMILARITY_THRESHOLD:
-                print(f"  - DUPLICATE (similarity: {similarity:.2f}): '{article.title}'")
+                print(f"  - DUPLICATE (similarity: {similarity:.2f}): '{title_to_check}'")
                 is_duplicate = True
                 break
         
         if not is_duplicate:
-            print(f"✅ Unique article found: '{article.title}'")
+            print(f"✅ Unique article found: '{title_to_check}'")
             print("--- De-duplication Finished ---")
             return article
 
@@ -105,7 +125,7 @@ def main():
     print("\n--- Step 4: AI Processing (Placeholder) ---")
     print("🤖 AI processing would happen here...")
     print(f"   - Article to process: '{unique_article.title}'")
-    print("   - Link: {unique_article.link}")
+    print(f"   - Link: {unique_article.link}")
 
     print("\n=============================================")
     print(f"🏁 News Curator finished at {datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')} UTC")
