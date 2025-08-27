@@ -1,2 +1,2 @@
-pygooglenews
 feedparser>=6.0
+requests
