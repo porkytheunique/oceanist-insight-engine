@@ -2,12 +2,12 @@ import os
 import json
 from datetime import datetime
 from pygooglenews import GoogleNews
-from difflib import SequenceMatcher # New import for comparing strings
+from difflib import SequenceMatcher
 
 # --- Configuration ---
 CONFIG_FILE = 'config.json'
 LOG_FILE = 'published_headlines.log'
-SIMILARITY_THRESHOLD = 0.9 # Headlines must be less than 90% similar to be unique
+SIMILARITY_THRESHOLD = 0.9
 
 def get_keywords_for_today():
     """
@@ -16,15 +16,15 @@ def get_keywords_for_today():
     today_weekday = datetime.utcnow().weekday()
     with open(CONFIG_FILE, 'r') as f:
         config = json.load(f)
-    print(f"Today is weekday {today_weekday}. (Wednesday is 2, Sunday is 6)")
+    print(f"🗓️ Today's UTC weekday is {today_weekday}. (Wednesday is 2, Sunday is 6)")
     if today_weekday == 2:
-        print("It's Wednesday, selecting news keywords.")
+        print("✅ It's Wednesday, selecting news keywords.")
         return config.get("wednesday_keywords", [])
     elif today_weekday == 6:
-        print("It's Sunday, selecting news keywords.")
+        print("✅ It's Sunday, selecting news keywords.")
         return config.get("sunday_keywords", [])
     else:
-        print("Not a scheduled day for news curation. Exiting.")
+        print("❌ Not a scheduled day for news curation.")
         return None
 
 def fetch_news_articles(keywords):
@@ -33,75 +33,83 @@ def fetch_news_articles(keywords):
     """
     gn = GoogleNews()
     query = f'({" OR ".join(keywords)}) AND ("study" OR "research" OR "report")'
-    print(f"Searching with query: {query}")
+    print(f"🔎 Searching for news with query: {query}")
     search_results = gn.search(query, when='2d')
     entries = search_results.get('entries', [])[:5]
-    print(f"Found {len(entries)} potential articles.")
+    print(f"📰 Found {len(entries)} potential articles in the top 5 results.")
     return entries
 
-# --- NEW FUNCTION ---
 def find_unique_article(articles):
     """
     Finds the first article that has not been published before.
     """
+    print("\n--- Starting De-duplication Process ---")
     try:
         with open(LOG_FILE, 'r') as f:
-            # Read all previous headlines, stripping any whitespace
             previous_headlines = [line.strip() for line in f.readlines()]
     except FileNotFoundError:
-        # If the log file doesn't exist, this is our first run.
         previous_headlines = []
 
-    print(f"Checking against {len(previous_headlines)} previously published headlines.")
+    print(f"📚 Checking against {len(previous_headlines)} previously published headlines in '{LOG_FILE}'.")
     
     for article in articles:
         is_duplicate = False
         for prev_headline in previous_headlines:
-            # Check how similar the new headline is to the old one
             similarity = SequenceMatcher(None, article.title, prev_headline).ratio()
             if similarity > SIMILARITY_THRESHOLD:
-                print(f"Found duplicate (similarity: {similarity:.2f}): '{article.title}'")
+                print(f"  - DUPLICATE (similarity: {similarity:.2f}): '{article.title}'")
                 is_duplicate = True
-                break # Move to the next new article
+                break
         
         if not is_duplicate:
-            print(f"Found a unique article: '{article.title}'")
-            return article # This is the one we'll use
+            print(f"✅ Unique article found: '{article.title}'")
+            print("--- De-duplication Finished ---")
+            return article
 
-    print("No unique articles found in the top results.")
+    print("❌ No unique articles were found in the latest search results.")
+    print("--- De-duplication Finished ---")
     return None
 
 def main():
     """
     Main function to run the news curation process.
     """
+    print("\n=============================================")
+    print(f"🚀 Starting News Curator at {datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')} UTC")
+    print("=============================================")
+
     api_key = os.getenv('AI_API_KEY')
     if not api_key:
-        print("Error: AI_API_KEY secret not found.")
+        print("⛔️ FATAL ERROR: AI_API_KEY secret not found.")
         return
 
+    print("\n--- Step 1: Checking Schedule and Keywords ---")
     keywords = get_keywords_for_today()
     if not keywords:
+        print("✅ Script finished: Not a scheduled day.")
         return
-    print(f"Keywords for today: {keywords}")
-    
+    print(f"🔑 Keywords for today: {keywords}")
+
+    print("\n--- Step 2: Fetching News Articles ---")
     articles = fetch_news_articles(keywords)
     if not articles:
-        print("No articles found for the given keywords. Exiting.")
+        print("✅ Script finished: No articles found for the given keywords.")
         return
 
-    # --- NEW SECTION ---
-    # Step 3: Find the first unique article to process
+    print("\n--- Step 3: Finding a Unique Article ---")
     unique_article = find_unique_article(articles)
-
     if not unique_article:
-        print("No unique article to process. Exiting.")
+        print("✅ Script finished: No unique article to process.")
         return
         
-    # --- Next steps will go here ---
-    # 4. Use AI to classify and summarize unique_article.
-    # 5. Save the final output.
-    # --------------------------------
+    print("\n--- Step 4: AI Processing (Placeholder) ---")
+    print("🤖 AI processing would happen here...")
+    print(f"   - Article to process: '{unique_article.title}'")
+    print("   - Link: {unique_article.link}")
+
+    print("\n=============================================")
+    print(f"🏁 News Curator finished at {datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')} UTC")
+    print("=============================================")
 
 if __name__ == "__main__":
     main()
