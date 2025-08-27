@@ -117,7 +117,7 @@ Return ONLY the raw JSON object and nothing else.
 """
     try:
         message = client.messages.create(
-            model="claude-3-sonnet-20240229", # Using the more powerful model for quality output
+            model="claude-3-5-sonnet-20240620", # Using the more powerful model for quality output
             max_tokens=500,
             messages=[{"role": "user", "content": prompt}]
         ).content[0].text
