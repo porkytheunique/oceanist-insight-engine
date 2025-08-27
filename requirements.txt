@@ -1,1 +1,2 @@
 pygooglenews
+feedparser>=6.0
