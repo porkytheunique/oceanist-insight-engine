@@ -4,10 +4,14 @@ on:
   schedule:
     # Runs at 01:30 UTC on Wednesday and Sunday
     - cron: '30 1 * * 3,0'
-  workflow_dispatch: # This allows us to run it manually from the Actions tab
+  workflow_dispatch:
 
 jobs:
   run-curator:
+    # This is the new block that grants write permissions
+    permissions:
+      contents: write
+
     runs-on: ubuntu-latest
 
     steps:
@@ -24,7 +28,6 @@ jobs:
 
       - name: 4. Run the news curator script
         env:
-          # Make the API key available to the script
           AI_API_KEY: ${{ secrets.AI_API_KEY }}
         run: python run_news_curator.py
 
