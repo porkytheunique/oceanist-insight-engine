@@ -3,6 +3,7 @@ import json
 import requests
 import random
 import anthropic
+from collections import Counter
 from datetime import datetime
 from shapely.geometry import shape, Point
 from rtree import index
@@ -14,8 +15,11 @@ OUTPUT_FILE = 'fishing_insight.json'
 ANALYSIS_SAMPLE_SIZE = 500
 
 def fetch_geospatial_data():
-    # ... (This function remains the same, omitted for brevity)
+    """
+    Downloads the fishing and MPA GeoJSON data from their URLs.
+    """
     print("🌎 Fetching geospatial data...")
+    fishing_data, mpa_data = None, None
     try:
         print(f"  - Downloading fishing data from {FISHING_DATA_URL}...")
         fishing_response = requests.get(FISHING_DATA_URL)
@@ -35,17 +39,15 @@ def fetch_geospatial_data():
         mpa_geometries = mpa_data.get('geometries', [])
         print(f"  ✅ Success: Loaded {len(mpa_geometries)} MPA geometries from the 'geometries' key.")
     except Exception as e:
-        print(f"  ❌ FATAL ERROR: Could not fetch or parse MPA data: {e}")
-        return fishing_data, None
+        print(f"  ⚠️ WARNING: Could not fetch or parse MPA data: {e}")
+        # We can still run other analyses, so we don't return None for fishing_data
+        mpa_data = None
 
     return fishing_data, mpa_data
 
 def analyze_mpa_proximity(fishing_data, mpa_data):
-    """
-    Finds a fishing event that is happening close to an MPA boundary.
-    """
+    # ... (This function remains the same as the optimized version)
     print("\n--- Starting Story Analysis: MPA Proximity ---")
-    # ... (This function is mostly the same, with one small change for nuance)
     mpa_geometries = mpa_data.get('geometries', [])
     fishing_events = fishing_data.get('entries', [])
 
@@ -90,7 +92,6 @@ def analyze_mpa_proximity(fishing_data, mpa_data):
 
     if closest_event:
         print("  ✅ Analysis Complete: Found a notable proximity event.")
-        # NUANCE FIX: Handle the 0.00 km case with more cautious language
         distance_text = f"{closest_event['distance_km']:.2f} km"
         if closest_event['distance_km'] < 0.1:
             distance_text = "less than 100 meters"
@@ -103,11 +104,8 @@ def analyze_mpa_proximity(fishing_data, mpa_data):
         print("  - ❌ Analysis Complete: Could not find a notable event in the sample.")
         return None
 
-# --- NEW ANALYSIS FUNCTION ---
 def analyze_global_hotspot(fishing_data, mpa_data=None):
-    """
-    Finds the busiest 5x5 degree grid cell of fishing activity in the world.
-    """
+    # ... (This function remains the same)
     print("\n--- Starting Story Analysis: Global Fishing Hotspot ---")
     fishing_events = fishing_data.get('entries', [])
     if not fishing_events:
@@ -116,7 +114,6 @@ def analyze_global_hotspot(fishing_data, mpa_data=None):
 
     print(f"  - Analyzing all {len(fishing_events)} events to find the global hotspot...")
     grid = {}
-    # Create a 5x5 degree grid and count events in each cell
     for event in fishing_events:
         lon = int(event['position']['lon'] // 5 * 5)
         lat = int(event['position']['lat'] // 5 * 5)
@@ -127,13 +124,12 @@ def analyze_global_hotspot(fishing_data, mpa_data=None):
         print("  - ❌ Could not generate grid.")
         return None
 
-    # Find the cell with the most events
     hotspot_cell = max(grid, key=grid.get)
     hotspot_count = grid[hotspot_cell]
     
     story_data = {
         "story_type": "global_hotspot",
-        "center_coords": [hotspot_cell[0] + 2.5, hotspot_cell[1] + 2.5], # Center of the cell
+        "center_coords": [hotspot_cell[0] + 2.5, hotspot_cell[1] + 2.5],
         "event_count": hotspot_count
     }
     
@@ -141,52 +137,122 @@ def analyze_global_hotspot(fishing_data, mpa_data=None):
     print(f"     - Hotspot: The 5x5 degree cell centered near {story_data['center_coords']} had {story_data['event_count']} fishing events.")
     return story_data
 
+# --- NEW ANALYSIS FUNCTIONS ---
+def analyze_eez_focus(fishing_data, mpa_data=None):
+    """
+    Finds which EEZ contains the most fishing activity from the GFW data.
+    """
+    print("\n--- Starting Story Analysis: EEZ Focus ---")
+    fishing_events = fishing_data.get('entries', [])
+    if not fishing_events:
+        print("  - ❌ No fishing events to analyze.")
+        return None
+    
+    # The GFW data already contains EEZ information for each point
+    eez_counts = Counter(event['regions']['eez'][0] for event in fishing_events if event.get('regions', {}).get('eez'))
+    
+    if not eez_counts:
+        print("  - ❌ No EEZ data found in fishing events.")
+        return None
+
+    most_common_eez, event_count = eez_counts.most_common(1)[0]
+    
+    sample_coord = None
+    for event in fishing_events:
+        if event.get('regions', {}).get('eez') and event['regions']['eez'][0] == most_common_eez:
+            sample_coord = [event['position']['lon'], event['position']['lat']]
+            break
+            
+    story_data = {
+        "story_type": "eez_focus",
+        "eez_name": most_common_eez,
+        "event_count": event_count,
+        "center_coords": sample_coord
+    }
+
+    print("  ✅ Analysis Complete: Found the busiest EEZ.")
+    print(f"     - Busiest EEZ: '{story_data['eez_name']}' with {story_data['event_count']} fishing events.")
+    return story_data
+
+def analyze_vessel_type(fishing_data, mpa_data=None):
+    """
+    Finds the most common vessel gear type in the dataset.
+    """
+    print("\n--- Starting Story Analysis: Vessel Type Spotlight ---")
+    fishing_events = fishing_data.get('entries', [])
+    if not fishing_events:
+        print("  - ❌ No fishing events to analyze.")
+        return None
+        
+    vessel_type_counts = Counter(event['geartype'] for event in fishing_events if event.get('geartype'))
+
+    if not vessel_type_counts:
+        print("  - ❌ No vessel type data found in fishing events.")
+        return None
+
+    most_common_type, count = vessel_type_counts.most_common(1)[0]
+    
+    story_data = {
+        "story_type": "vessel_type",
+        "vessel_type": most_common_type,
+        "event_count": count
+    }
+    
+    print("  ✅ Analysis Complete: Found the most common vessel type.")
+    print(f"     - Vessel Type: '{story_data['vessel_type']}' appeared {story_data['event_count']} times.")
+    return story_data
+
+
 def generate_insight_with_ai(story_data, client):
     """
     Builds a prompt based on the story type and asks the AI to generate the insight.
     """
     print("\n--- Step 4: Generating AI Insight ---")
+    prompt = "" # Initialize prompt
     
-    # --- UPDATED TO HANDLE MULTIPLE STORY TYPES ---
-    if story_data.get('story_type') == 'mpa_proximity':
+    story_type = story_data.get('story_type')
+    
+    if story_type == 'mpa_proximity':
         distance_text = story_data['distance_text']
         fishing_coords = story_data['fishing_coords']
-        
-        prompt = f"""You are a science communicator for oceanist.blue. Analyze the following data and produce a JSON object for our insight feed.
+        prompt = f"""You are a science communicator for oceanist.blue. Analyze the following data and produce a JSON object.
+Analysis Result: A fishing vessel was detected at a distance of {distance_text} from a Marine Protected Area boundary, at coordinates {fishing_coords}.
+JSON Instructions: Create a JSON object with keys "tag" (#Fishing), "content" (3-4 sentences starting with the geographic region, stating the fact with cautious language, and explaining 'fishing the line'), and "map_view" (center: {fishing_coords}, zoom: 9, maxZoom: 14).
+Return ONLY the raw JSON object."""
 
-Analysis Result: A fishing vessel was detected at a distance of {distance_text} from a Marine Protected Area boundary. The event occurred at coordinates {fishing_coords}.
-
-Based on this, create a JSON object:
-- "tag": Use #Fishing.
-- "content": Write a 3-4 sentence analysis. Start by identifying the geographic region from the coordinates. Then, state the fact about the vessel's proximity. **Use cautious language like 'at or very near the boundary' due to potential data inaccuracies.** Explain the concept of 'fishing the line'.
-- "map_view": An object with "center": {fishing_coords}, "zoom": 9, and "maxZoom": 14.
-
-Return ONLY the raw JSON object.
-"""
-    elif story_data.get('story_type') == 'global_hotspot':
+    elif story_type == 'global_hotspot':
         center_coords = story_data['center_coords']
         event_count = story_data['event_count']
+        prompt = f"""You are a science communicator for oceanist.blue. Analyze the following data and produce a JSON object.
+Analysis Result: The world's busiest fishing hotspot is the 5x5 degree area centered at {center_coords}, with {event_count} fishing events.
+JSON Instructions: Create a JSON object with keys "tag" (#Fishing), "content" (3-4 sentences identifying the ocean basin/sea, explaining its significance as a fishery, and discussing the industrial scale), and "map_view" (center: {center_coords}, zoom: 5, maxZoom: 10).
+Return ONLY the raw JSON object."""
 
-        prompt = f"""You are a science communicator for oceanist.blue. Analyze the following data and produce a JSON object for our insight feed.
+    elif story_type == 'eez_focus':
+        eez_name = story_data['eez_name']
+        event_count = story_data['event_count']
+        center_coords = story_data['center_coords']
+        prompt = f"""You are a science communicator for oceanist.blue. Analyze the following data and produce a JSON object.
+Analysis Result: The most active fishing zone was the Exclusive Economic Zone (EEZ) of '{eez_name}', with {event_count} fishing events. A sample event is at {center_coords}.
+JSON Instructions: Create a JSON object with keys "tag" (#Fishing), "content" (3-4 sentences identifying the country, discussing the EEZ's significance, and explaining what an EEZ is), and "map_view" (center: {center_coords}, zoom: 5, maxZoom: 10).
+Return ONLY the raw JSON object."""
 
-Analysis Result: The world's busiest fishing hotspot in our recent data is the 5x5 degree area centered at coordinates {center_coords}. This area contained {event_count} distinct fishing events.
+    elif story_type == 'vessel_type':
+        vessel_type = story_data['vessel_type']
+        event_count = story_data['event_count']
+        prompt = f"""You are a science communicator for oceanist.blue. Analyze the following data and produce a JSON object.
+Analysis Result: The most frequent gear type observed was '{vessel_type}', with {event_count} fishing events.
+JSON Instructions: Create a JSON object with keys "tag" (#Fishing), "content" (3-4 sentences explaining the '{vessel_type}' method, its target species, and potential ecological impacts), and "map_view" (center: [0, 0], zoom: 2, as this is non-geographic).
+Return ONLY the raw JSON object."""
 
-Based on this, create a JSON object:
-- "tag": Use #Fishing.
-- "content": Write a 3-4 sentence analysis. Start by identifying the major ocean basin or sea corresponding to the coordinates. Discuss why this region is a significant global fishing ground (e.g., major currents, upwelling zones, known fisheries). Explain how this concentration of activity highlights the industrial scale of modern fishing.
-- "map_view": An object with "center": {center_coords}, "zoom": 5, and "maxZoom": 10.
-
-Return ONLY the raw JSON object.
-"""
     else:
         print("  - ❌ Error: Unknown story type.")
         return None
-
+        
     try:
-        # ... (AI call logic remains the same, omitted for brevity)
-        print("  - 🤖 Sending prompt to AI...")
+        print(f"  - 🤖 Sending prompt for story type '{story_type}'...")
         message = client.messages.create(
-            model="claude-sonnet-4-20250514",
+            model="claude-3-5-sonnet-20240620",
             max_tokens=500,
             messages=[{"role": "user", "content": prompt}]
         ).content[0].text
@@ -219,17 +285,23 @@ def main():
         return
 
     print("\n--- Step 3: Performing Story Analysis (Roulette) ---")
-    # --- NEW: STORY ROULETTE LOGIC ---
-    # Create a list of available analysis functions
-    story_functions = [
-        analyze_mpa_proximity,
-        analyze_global_hotspot
-    ]
-    # Randomly select one function to run
+    
+    # Create a list of available analysis functions based on data loaded
+    story_functions = []
+    if mpa_data and fishing_data:
+        story_functions.append(analyze_mpa_proximity)
+    if fishing_data:
+        story_functions.append(analyze_global_hotspot)
+        story_functions.append(analyze_eez_focus)
+        story_functions.append(analyze_vessel_type)
+
+    if not story_functions:
+        print("❌ Script finished: Not enough data to run any analysis.")
+        return
+
     chosen_story_function = random.choice(story_functions)
     story_data = chosen_story_function(fishing_data, mpa_data)
-    # ------------------------------------
-
+    
     if not story_data:
         print("❌ Script finished: No compelling story found in the data analysis.")
         return
