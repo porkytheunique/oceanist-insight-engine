@@ -56,19 +56,27 @@ jobs:
           GITHUB_EVENT_NAME: ${{ github.event_name }}
         run: python run_oilgas_analyzer.py
 
-      - name: Pull latest changes to avoid conflicts
+      - name: Pull latest changes
         run: git pull
 
-      - name: Commit changes to GitHub
-        uses: stefanzweifel/git-auto-commit-action@v5
-        with:
-          commit_message: "feat(data): update insight and log files"
-          file_pattern: "*.log *.json"
-
+      # --- REPLACED COMMIT STEP ---
+      - name: Commit and push changes
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          # Add all changed .json and .log files. This command won't fail if one type is missing.
+          git add *.json *.log || true 
+          # Only commit if there are actual changes
+          if ! git diff --staged --quiet; then
+            git commit -m "feat(data): update insight and log files"
+            git push
+          else
+            echo "No changes to commit."
+          fi
+          
       - name: ⬆️ Upload insight file to Server
         run: |
           sudo apt-get -y install lftp
-
           if [ -f "news_insight.json" ]; then
             FILE_TO_UPLOAD="news_insight.json"
           elif [ -f "fishing_insight.json" ]; then
@@ -79,9 +87,7 @@ jobs:
             echo "No insight file was generated, skipping upload."
             exit 0
           fi
-
           echo "Uploading $FILE_TO_UPLOAD..."
-          
           lftp -c "
             set ftp:ssl-force true;
             set ftp:ssl-protect-data true;
