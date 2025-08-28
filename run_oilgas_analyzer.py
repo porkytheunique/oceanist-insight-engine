@@ -121,7 +121,7 @@ def main():
     event_name = os.getenv('GITHUB_EVENT_NAME')
     if event_name == 'schedule':
         today_weekday = datetime.utcnow().weekday()
-        if today_weekday != 4:
+        if today_weekday != 4: # Friday
             print(f"🗓️ Today is weekday {today_weekday}, but this job only runs on Fridays (4). Exiting.", flush=True); return
     print("🗓️ Running oil & gas analysis (manual run or correct day).", flush=True)
     
@@ -134,7 +134,7 @@ def main():
     if not platform_data or not coral_data: return
 
     print("\n--- Step 2: Performing Story Analysis ---", flush=True)
-    story_data = analyze_coral_proximity(platform_data, coral_data)
+    story_.data = analyze_coral_proximity(platform_data, coral_data)
     if not story_data: return
         
     print("\n--- Step 3: De-duplication Check ---", flush=True)
@@ -145,14 +145,16 @@ def main():
             data = res.json()
             if isinstance(data, list): all_insights = data
             elif isinstance(data, dict): all_insights = [data]
-    except Exception: pass
+            print(f"✅ Loaded existing oil/gas log with {len(all_insights)} insights.", flush=True)
+    except Exception as e:
+        print(f"⚠️ Could not load existing oil/gas log, will create a new one. Reason: {e}", flush=True)
     
     today_date = datetime.utcnow().strftime('%Y-%m-%d')
     unique_id = f"{story_data['platform_name']}-{today_date}"
     is_duplicate = any(item.get('unique_id') == unique_id for item in all_insights)
     
     if is_duplicate:
-        print(f"❌ Duplicate story for today found ('{unique_id}'). Exiting.", flush=True); return
+        print(f"❌ Duplicate story for today found ('{unique_id}'). Exiting without changes.", flush=True); return
 
     insight_data = generate_insight_with_ai(story_data, client)
     if not insight_data: return
