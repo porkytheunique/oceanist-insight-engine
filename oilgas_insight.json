@@ -1,10 +1,10 @@
 {
   "tag": "#FossilFuels",
-  "content": "The Mahar oil and gas platform operates in Myanmar waters at approximately 92.63\u00b0E, 19.39\u00b0N, located roughly 63.7 km from coral reefs in the Northern Bay of Bengal ecoregion. While this distance provides some buffer, offshore fossil fuel infrastructure can still pose environmental risks to nearby marine ecosystems through potential oil spills, chemical discharge, and underwater noise pollution. Coral reefs are particularly vulnerable to hydrocarbon contamination, which can cause bleaching, reduced reproductive success, and long-term ecosystem degradation. The proximity underscores the importance of stringent environmental monitoring and spill response protocols in this ecologically sensitive region.",
+  "content": "The Salsa (GB171) - Hess oil and gas platform, located in United States waters in the Southern Gulf of Mexico ecoregion, operates approximately 630.8 km from a coral reef ecosystem. While this distance provides some buffer, offshore fossil fuel infrastructure can pose environmental risks to fragile marine ecosystems through potential oil spills, chemical discharges, and operational pollution. These risks can affect water quality and marine biodiversity across vast ocean areas, potentially impacting coral reefs and other sensitive habitats even at considerable distances. Continuous monitoring and strict environmental protocols are essential to minimize potential impacts on these vulnerable ecosystems.",
   "map_view": {
     "center": [
-      92.63,
-      19.39
+      -92.023,
+      27.78
     ],
     "zoom": 8,
     "maxZoom": 12
