@@ -118,9 +118,41 @@ Return ONLY the raw JSON object and nothing else.
 
 # In run_oilgas_analyzer.py, replace the entire main() function
 
-def main():
-    # ... (all setup logic until the final saving step remains the same)
+# In run_oilgas_analyzer.py, replace the entire main() function with this:
 
+def main():
+    print("\n=============================================", flush=True)
+    print(f"🛢️ Starting Oil & Gas Analyzer at {datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')} UTC", flush=True)
+    print("=============================================", flush=True)
+
+    event_name = os.getenv('GITHUB_EVENT_NAME')
+    if event_name == 'schedule':
+        today_weekday = datetime.utcnow().weekday()
+        if today_weekday != 4: # Friday
+            print(f"🗓️ Today is weekday {today_weekday}, but this job only runs on Fridays (4). Exiting.", flush=True)
+            return
+    print("🗓️ Running oil & gas analysis (manual run or correct day).", flush=True)
+
+    api_key = os.getenv('AI_API_KEY')
+    if not api_key:
+        print("⛔️ FATAL ERROR: AI_API_KEY secret not found.", flush=True)
+        return
+    client = anthropic.Anthropic(api_key=api_key)
+
+    print("\n--- Step 1: Fetching Geospatial Data ---", flush=True)
+    platform_data, coral_data = fetch_geospatial_data()
+    if not platform_data or not coral_data:
+        return
+
+    print("\n--- Step 2: Performing Story Analysis ---", flush=True)
+    story_data = analyze_coral_proximity(platform_data, coral_data)
+    if not story_data:
+        return
+        
+    insight_data = generate_insight_with_ai(story_data, client)
+    if not insight_data:
+        return
+        
     print("\n--- Step 4: Finalizing and Saving Output ---", flush=True)
     insight_data['date'] = datetime.utcnow().strftime('%Y-%m-%d')
 
