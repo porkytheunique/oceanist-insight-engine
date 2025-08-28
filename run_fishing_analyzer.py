@@ -2,6 +2,7 @@ import os
 import json
 import requests
 import random
+import anthropic
 from datetime import datetime
 from shapely.geometry import shape, Point
 
@@ -9,7 +10,6 @@ from shapely.geometry import shape, Point
 FISHING_DATA_URL = "https://porkytheunique.github.io/ocean-map-data/fishing_events.geojson"
 MPA_DATA_URL = "https://porkytheunique.github.io/ocean-map-data/WDPA.json"
 OUTPUT_FILE = 'latest_insight.json'
-# To ensure the script runs quickly, we'll analyze a random sample of fishing points.
 ANALYSIS_SAMPLE_SIZE = 500
 
 def fetch_geospatial_data():
@@ -48,7 +48,6 @@ def analyze_mpa_proximity(fishing_data, mpa_data):
         print("  - ❌ Cannot run MPA Proximity analysis: MPA data failed to load.")
         return None
 
-    # Convert MPA features to Shapely objects for efficient calculation
     print(f"  - Pre-processing {len(mpa_data['features'])} MPA geometries...")
     mpa_polygons = {
         mpa['properties'].get('NAME', 'Unnamed Area'): shape(mpa['geometry'])
@@ -56,7 +55,6 @@ def analyze_mpa_proximity(fishing_data, mpa_data):
     }
     print(f"  - Successfully processed {len(mpa_polygons)} valid MPA geometries.")
 
-    # Select a random sample of fishing events to analyze for performance
     all_fishing_events = fishing_data['features']
     sample_size = min(len(all_fishing_events), ANALYSIS_SAMPLE_SIZE)
     fishing_sample = random.sample(all_fishing_events, sample_size)
@@ -65,9 +63,8 @@ def analyze_mpa_proximity(fishing_data, mpa_data):
     closest_event = None
     min_distance = float('inf')
 
-    # Brute-force check of each fishing point against each MPA polygon
     for i, event in enumerate(fishing_sample):
-        if i % 50 == 0: # Print progress update every 50 events
+        if i % 50 == 0:
             print(f"    - Analyzing event {i}/{sample_size}...")
         
         point = Point(event['geometry']['coordinates'])
@@ -77,63 +74,4 @@ def analyze_mpa_proximity(fishing_data, mpa_data):
                 min_distance = distance
                 closest_event = {
                     "mpa_name": mpa_name,
-                    "distance_degrees": distance,
-                    "distance_km": distance * 111.32, # Approximate conversion from degrees to km
-                    "fishing_coords": event['geometry']['coordinates']
-                }
-
-    if closest_event:
-        print("  ✅ Analysis Complete: Found a notable proximity event.")
-        print(f"     - Closest Event: A fishing vessel was detected {closest_event['distance_km']:.2f} km from the boundary of '{closest_event['mpa_name']}'.")
-        return closest_event
-    else:
-        print("  - ❌ Analysis Complete: Could not find a notable event in the sample.")
-        return None
-
-def main():
-    """
-    Main function to run the fishing analysis process.
-    """
-    print("\n=============================================")
-    print(f"🎣 Starting Fishing Analyzer at {datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')} UTC")
-    print("=============================================")
-
-    # For now, we'll let it run any day for testing. We'll add the Monday check later.
-    print("🗓️ Running scheduled fishing analysis.")
-    
-    api_key = os.getenv('AI_API_KEY')
-    if not api_key:
-        print("⛔️ FATAL ERROR: AI_API_KEY secret not found.")
-        return
-
-    print("\n--- Step 2: Fetching Geospatial Data ---")
-    fishing_data, mpa_data = fetch_geospatial_data()
-    
-    if not fishing_data:
-        print("❌ Script finished: Could not retrieve fishing data.")
-        return
-
-    # --- REPLACED PLACEHOLDER ---
-    print("\n--- Step 3: Performing Story Analysis ---")
-    # This is the first part of our "Story Roulette". For now, it only has one option.
-    story_data = analyze_mpa_proximity(fishing_data, mpa_data)
-
-    if not story_data:
-        print("❌ Script finished: No compelling story found in the data analysis.")
-        return
-
-    # --- Next steps will go here ---
-    # 4. Build a prompt for the AI using story_data.
-    # 5. Call the AI and save the output.
-    # --------------------------------
-    print("\n--- Step 4: AI Processing (Placeholder) ---")
-    print("🤖 Analysis complete. AI prompt generation will go here.")
-    print(f"   - Story data to use: {story_data}")
-
-
-    print("\n=============================================")
-    print(f"🏁 Fishing Analyzer finished at {datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')} UTC")
-    print("=============================================")
-
-if __name__ == "__main__":
-    main()
+                    "
