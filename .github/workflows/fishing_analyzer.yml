@@ -19,14 +19,14 @@ jobs:
           AI_API_KEY: ${{ secrets.AI_API_KEY }}
         run: python run_fishing_analyzer.py
       - name: ⬆️ Upload fishing_insight.json
-        uses: sebastianpopp/ftp-action@releases/v2
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.4
         with:
-          host: ${{ secrets.FTP_SERVER }}
-          user: ${{ secrets.FTP_USERNAME }}
+          server: ${{ secrets.FTP_SERVER }}
+          username: ${{ secrets.FTP_USERNAME }}
           password: ${{ secrets.FTP_PASSWORD }}
+          protocol: ftps
           port: 21
-          command: |
-            set ftp:ssl-force true
-            set ftp:ssl-protect-data true
-            set ssl:verify-certificate false
-            put -O /public_html/map-data/ fishing_insight.json
+          # This safe pattern uploads ONLY the target file
+          exclude:
+            - "**/*"
+            - "!fishing_insight.json"
