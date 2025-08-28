@@ -1,15 +1,17 @@
 [
   {
     "tag": "#CoralReefs",
-    "content": "A groundbreaking study has revealed crucial insights into the connectivity of mesophotic reefs in the northern Gulf of Mexico. These deep-water reefs, found between 30-150 meters below the surface, play a vital role in marine ecosystems but are often overlooked in conservation efforts. The research highlights the importance of understanding reef networks for effective marine protection and could inform future strategies for preserving these unique underwater habitats.",
+    "content": "New research from the University of Hawaii reveals that protecting the aesthetic beauty of coral reefs provides significant benefits for both conservation efforts and local economies. The study demonstrates how the visual appeal of healthy reefs attracts tourists and generates economic value, creating powerful incentives for communities to engage in conservation practices. This approach highlights the interconnected relationship between environmental protection and economic prosperity in coastal regions. The findings suggest that emphasizing reef beauty can be an effective strategy for building broader support for marine conservation initiatives.",
     "map_view": {
       "center": [
-        27.5,
-        -90
+        21.3099,
+        -157.8581
       ],
       "zoom": 6,
       "maxZoom": 10
     },
-    "date": "2025-08-28"
+    "date": "2025-08-28",
+    "source_headline": "Protecting the beauty of reefs bolsters conservation, economy - University of Hawaii System",
+    "source_url": "https://news.google.com/rss/articles/CBMiggFBVV95cUxON050NWFVdXZ2TmMxZzI4TDdDTS1HTzVDd2plLW1TUkJyYngxVy1SMHJNWUhyb3ZOakdfMzZ3YS1GRGF6Z1luTkxrUEhuQW9wZ1ZSQWUxTXhwQTFHUlRlbjdqanlNOGx3MW1lSVJXSi1QNWs4ZTl4WVk2MjNYLVY2Rzd3?oc=5"
   }
 ]
