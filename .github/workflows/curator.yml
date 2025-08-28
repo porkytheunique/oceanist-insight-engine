@@ -26,6 +26,7 @@ jobs:
       contents: write
     runs-on: ubuntu-latest
     steps:
+      # ... (steps 1-4 for checkout, setup, install, run are the same) ...
       - name: Checkout repository
         uses: actions/checkout@v4
       - name: Set up Python
@@ -43,19 +44,21 @@ jobs:
         with:
           commit_message: "feat(news): update news log and insight data"
           file_pattern: "*.log *.json"
+
+      - name: Create deployment package
+        run: mkdir dist && cp news_insight.json dist/
+
+      # --- CORRECTED DEPLOY STEP ---
       - name: Deploy insight file to server
         uses: SamKirkland/FTP-Deploy-Action@v4.3.4
         with:
           server: ${{ secrets.FTP_SERVER }}
           username: ${{ secrets.FTP_USERNAME }}
           password: ${{ secrets.FTP_PASSWORD }}
-          # Upload only the news insight file
-          local-dir: ./
-          # Change this to your desired path on the server
-          server-dir: /public_html/map-data/
-          # Ensure only the one file is uploaded
-          exclude: "**"
-          include: "news_insight.json"
+          protocol: ftps # Use FTPS for FTP with TLS
+          port: 21 # Use Port 21 as per your settings
+          local-dir: ./dist/ 
+          server-dir: /public_html/map-data/ # Make sure this path is correct for your server
 
   run-fishing-analyzer:
     if: |
