@@ -118,6 +118,7 @@ def main():
     print("\n--- Step 2: Performing Story Analysis ---", flush=True)
     story_data = analyze_coral_proximity(platform_data, coral_data)
     if not story_data: return
+        
     print("\n--- Step 3: De-duplication Check ---", flush=True)
     all_insights = []
     try:
@@ -127,20 +128,27 @@ def main():
             if isinstance(data, list): all_insights = data
             elif isinstance(data, dict): all_insights = [data]
     except Exception: pass
+    
     today_date = datetime.utcnow().strftime('%Y-%m-%d')
     unique_id = f"{story_data['platform_name']}-{today_date}"
     is_duplicate = any(item.get('unique_id') == unique_id for item in all_insights)
+    
     if is_duplicate:
         print(f"❌ Duplicate story for today found ('{unique_id}'). Exiting.", flush=True); return
+
     insight_data = generate_insight_with_ai(story_data, client)
     if not insight_data: return
+        
     print("\n--- Step 4: Finalizing and Archiving Output ---", flush=True)
     insight_data['date'] = today_date
     insight_data['unique_id'] = unique_id
+    
     all_insights.insert(0, insight_data)
+    
     with open(OUTPUT_FILE, 'w') as f:
         json.dump(all_insights, f, indent=2)
     print(f"✅ Saved updated log with {len(all_insights)} total insights to '{OUTPUT_FILE}'.", flush=True)
+    
     print("\n=============================================", flush=True)
     print(f"🏁 Oil & Gas Analyzer finished at {datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')} UTC", flush=True)
     print("=============================================", flush=True)
