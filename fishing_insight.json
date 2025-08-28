@@ -1,13 +1,13 @@
 {
   "tag": "#Fishing",
-  "content": "A fishing vessel has been detected in the East China Sea, near the waters around Okinawa, Japan. Our monitoring systems show the vessel operating at or very near a Marine Protected Area boundary, within approximately 100 meters of the designated zone. This behavior, known as 'fishing the line,' involves vessels positioning themselves as close as possible to protected area boundaries to maximize their catch while technically remaining in legal fishing zones. While this practice may be permissible, it raises concerns about potential impacts on marine ecosystems that conservation areas are designed to protect.",
+  "content": "The world's busiest fishing hotspot is located in the East China Sea, off the coast of China's Zhejiang Province. This area is a crucial fishery, supporting both China's massive domestic seafood consumption and its substantial fishing export industry. The high number of fishing events (975) in this relatively small area highlights the intense industrial-scale fishing operations taking place, raising concerns about the sustainability of fish stocks and the impact on marine ecosystems.",
   "map_view": {
     "center": [
-      127.668,
-      26.2649
+      122.5,
+      27.5
     ],
-    "zoom": 9,
-    "maxZoom": 14
+    "zoom": 5,
+    "maxZoom": 10
   },
   "date": "2025-08-28"
 }
