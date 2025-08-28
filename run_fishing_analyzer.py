@@ -153,7 +153,7 @@ def main():
     event_name = os.getenv('GITHUB_EVENT_NAME')
     if event_name == 'schedule':
         today_weekday = datetime.utcnow().weekday()
-        if today_weekday != 0:
+        if today_weekday != 0: # Monday
             print(f"🗓️ Today is weekday {today_weekday}, but this job only runs on Mondays (0). Exiting.", flush=True); return
     print("🗓️ Running fishing analysis (manual run or correct day).", flush=True)
     
@@ -192,7 +192,7 @@ def main():
     is_duplicate = any(item.get('unique_id') == unique_id for item in all_insights)
     
     if is_duplicate:
-        print(f"❌ Duplicate story type for today found ('{unique_id}'). Exiting.", flush=True); return
+        print(f"❌ Duplicate story type for today found ('{unique_id}'). Exiting without changes.", flush=True); return
 
     insight_data = generate_insight_with_ai(story_data, client)
     if not insight_data:
