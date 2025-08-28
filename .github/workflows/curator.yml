@@ -2,6 +2,7 @@ name: Oceanist Insight Engine
 
 on:
   schedule:
+    # Runs at 01:30 UTC on Mon, Wed, Fri, Sun
     - cron: '30 1 * * 1,3,5,0'
   workflow_dispatch:
     inputs:
@@ -39,12 +40,12 @@ jobs:
           commit_message: "feat(news): update news data"
       - name: ⬆️ Upload news_insight.json
         uses: sebastianpopp/ftp-action@releases/v2
+        env:
+          FTP_USER: ${{ secrets.FTP_USERNAME }}
+          FTP_PASSWORD: ${{ secrets.FTP_PASSWORD }}
         with:
           host: ${{ secrets.FTP_SERVER }}
-          user: ${{ secrets.FTP_USERNAME }}
-          password: ${{ secrets.FTP_PASSWORD }}
-          # Correct syntax for this action to upload a single file
-          entryPoint: lftp
+          # Note: user and password are now in the 'env' block above
           args: -e "set ftp:ssl-force true; set ftp:ssl-protect-data true; put -O /public_html/map-data/ news_insight.json; exit"
 
   run-fishing-analyzer:
@@ -71,11 +72,11 @@ jobs:
           commit_message: "feat(fishing): update fishing data"
       - name: ⬆️ Upload fishing_insight.json
         uses: sebastianpopp/ftp-action@releases/v2
+        env:
+          FTP_USER: ${{ secrets.FTP_USERNAME }}
+          FTP_PASSWORD: ${{ secrets.FTP_PASSWORD }}
         with:
           host: ${{ secrets.FTP_SERVER }}
-          user: ${{ secrets.FTP_USERNAME }}
-          password: ${{ secrets.FTP_PASSWORD }}
-          entryPoint: lftp
           args: -e "set ftp:ssl-force true; set ftp:ssl-protect-data true; put -O /public_html/map-data/ fishing_insight.json; exit"
 
   run-oilgas-analyzer:
@@ -102,9 +103,9 @@ jobs:
           commit_message: "feat(oilgas): update oil & gas data"
       - name: ⬆️ Upload oilgas_insight.json
         uses: sebastianpopp/ftp-action@releases/v2
+        env:
+          FTP_USER: ${{ secrets.FTP_USERNAME }}
+          FTP_PASSWORD: ${{ secrets.FTP_PASSWORD }}
         with:
           host: ${{ secrets.FTP_SERVER }}
-          user: ${{ secrets.FTP_USERNAME }}
-          password: ${{ secrets.FTP_PASSWORD }}
-          entryPoint: lftp
           args: -e "set ftp:ssl-force true; set ftp:ssl-protect-data true; put -O /public_html/map-data/ oilgas_insight.json; exit"
