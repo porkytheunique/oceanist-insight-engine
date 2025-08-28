@@ -2,8 +2,8 @@ name: Oceanist Insight Engine
 
 on:
   schedule:
-    # Runs at 01:30 UTC on Monday, Wednesday, and Sunday
-    - cron: '30 1 * * 1,3,0'
+    # Runs at 01:30 UTC on Mon, Wed, Fri, Sun
+    - cron: '30 1 * * 1,3,5,0'
   workflow_dispatch:
     inputs:
       script_to_run:
@@ -14,6 +14,7 @@ on:
         options:
         - news_curator
         - fishing_analyzer
+        - oilgas_analyzer
 
 jobs:
   run-news-curator:
@@ -23,31 +24,24 @@ jobs:
     
     permissions:
       contents: write
-
     runs-on: ubuntu-latest
-
     steps:
       - name: 1. Checkout repository
         uses: actions/checkout@v4
-
       - name: 2. Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: '3.10'
-
       - name: 3. Install dependencies
         run: pip install -r requirements.txt
-
       - name: 4. Run the NEWS curator script
         env:
           AI_API_KEY: ${{ secrets.AI_API_KEY }}
         run: python run_news_curator.py
-
       - name: 5. Commit and push changes
         uses: stefanzweifel/git-auto-commit-action@v5
         with:
           commit_message: "feat(news): update news log and insight data"
-          # This pattern will now catch any .log or .json file
           file_pattern: "*.log *.json"
 
   run-fishing-analyzer:
@@ -57,29 +51,50 @@ jobs:
 
     permissions:
       contents: write
-
     runs-on: ubuntu-latest
-
     steps:
       - name: 1. Checkout repository
         uses: actions/checkout@v4
-
       - name: 2. Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: '3.10'
-
       - name: 3. Install dependencies
         run: pip install -r requirements.txt
-
       - name: 4. Run the FISHING analyzer script
         env:
           AI_API_KEY: ${{ secrets.AI_API_KEY }}
         run: python run_fishing_analyzer.py
-
       - name: 5. Commit and push changes
         uses: stefanzweifel/git-auto-commit-action@v5
         with:
           commit_message: "feat(fishing): update fishing insight data"
-          # This pattern will now catch any .log or .json file
-          file_pattern: "*.log *.json"
+          file_pattern: "*.json"
+
+  run-oilgas-analyzer:
+    # This job only runs on Fridays OR if manually selected
+    if: |
+      (github.event_name == 'schedule' && github.event.schedule == '30 1 * * 5') ||
+      (github.event_name == 'workflow_dispatch' && github.event.inputs.script_to_run == 'oilgas_analyzer')
+
+    permissions:
+      contents: write
+    runs-on: ubuntu-latest
+    steps:
+      - name: 1. Checkout repository
+        uses: actions/checkout@v4
+      - name: 2. Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+      - name: 3. Install dependencies
+        run: pip install -r requirements.txt
+      - name: 4. Run the OIL & GAS analyzer script
+        env:
+          AI_API_KEY: ${{ secrets.AI_API_KEY }}
+        run: python run_oilgas_analyzer.py
+      - name: 5. Commit and push changes
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: "feat(oilgas): update oil & gas insight data"
+          file_pattern: "oilgas_insight.json"
