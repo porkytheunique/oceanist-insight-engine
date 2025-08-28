@@ -7,9 +7,9 @@ from datetime import datetime
 from urllib.parse import quote_plus
 
 # --- Configuration ---
-CONFIG_FILE = 'config.json'
 OUTPUT_FILE = 'news_insight.json'
 SERVER_LOG_URL = 'https://www.oceanist.blue/map-data/news_insight.json'
+CONFIG_FILE = 'config.json'
 
 def get_keywords_for_today():
     event_name = os.getenv('GITHUB_EVENT_NAME')
@@ -109,8 +109,9 @@ def main():
     try:
         res = requests.get(SERVER_LOG_URL)
         if res.status_code == 200:
-            all_insights = res.json()
-            if not isinstance(all_insights, list): all_insights = [all_insights] # Robustness check
+            data = res.json()
+            if isinstance(data, list): all_insights = data
+            elif isinstance(data, dict): all_insights = [data]
             print(f"✅ Successfully loaded existing log with {len(all_insights)} insights.", flush=True)
     except Exception as e:
         print(f"⚠️ Could not load existing log, will create a new one. Reason: {e}", flush=True)
