@@ -26,7 +26,7 @@ jobs:
           password: ${{ secrets.FTP_PASSWORD }}
           protocol: ftps
           port: 21
-          # This safe pattern uploads ONLY the target file
-          exclude:
-            - "**/*"
-            - "!fishing_insight.json"
+          # Corrected indentation for exclude
+          exclude: |
+            **/*
+            !fishing_insight.json
