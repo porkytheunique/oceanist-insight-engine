@@ -224,6 +224,8 @@ Return ONLY the raw JSON object."""
 
 # In run_fishing_analyzer.py
 
+# In run_fishing_analyzer.py, replace the entire main() function with this:
+
 def main():
     """
     Main function to run the fishing analysis process.
@@ -232,10 +234,8 @@ def main():
     print(f"🎣 Starting Fishing Analyzer at {datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')} UTC")
     print("=============================================")
     
-    # Check how the workflow was triggered
     event_name = os.getenv('GITHUB_EVENT_NAME')
     
-    # Only check the schedule if it's a scheduled run
     if event_name == 'schedule':
         today_weekday = datetime.utcnow().weekday()
         if today_weekday != 0: # Monday is 0
@@ -250,7 +250,6 @@ def main():
         return
     client = anthropic.Anthropic(api_key=api_key)
 
-    # ... (the rest of the main function is the same) ...
     print("\n--- Step 2: Fetching Geospatial Data ---")
     fishing_data, mpa_data = fetch_geospatial_data()
     if not fishing_data:
@@ -258,7 +257,6 @@ def main():
         return
 
     print("\n--- Step 3: Performing Story Analysis (Roulette) ---")
-    
     story_functions = []
     if mpa_data and fishing_data:
         story_functions.append(analyze_mpa_proximity)
@@ -282,15 +280,11 @@ def main():
         print("❌ Script finished: AI failed to generate a valid insight.")
         return
         
-    # In the main() function, replace the final saving step with this:
-print("\n--- Step 5: Finalizing and Saving Output ---")
-insight_data['date'] = datetime.utcnow().strftime('%Y-%m-%d')
-with open("fishing_insight.json", 'w') as f:
-    json.dump(insight_data, f, indent=2)
-print(f"✅ Successfully saved new insight to 'fishing_insight.json'.")
-print("\n=============================================")
-print(f"🏁 Fishing Analyzer finished at {datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')} UTC")
-print("=============================================")
-
-if __name__ == "__main__":
-    main()
+    print("\n--- Step 5: Finalizing and Saving Output ---")
+    insight_data['date'] = datetime.utcnow().strftime('%Y-%m-%d')
+    with open("fishing_insight.json", 'w') as f:
+        json.dump(insight_data, f, indent=2)
+    print(f"✅ Successfully saved new insight to 'fishing_insight.json'.")
+    print("\n=============================================")
+    print(f"🏁 Fishing Analyzer finished at {datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')} UTC")
+    print("=============================================")
