@@ -64,33 +64,22 @@ def fetch_news_articles(keywords):
 
 # In run_news_curator.py
 
+# In run_news_curator.py
 def find_unique_article(articles):
     print("\n--- Starting De-duplication Process ---", flush=True)
-    
-    # Check against the master log file on the server
-    all_insights = []
-    log_url = 'https://www.oceanist.blue/map-data/insights_log.json'
-    try:
-        existing_log_res = requests.get(log_url)
-        if existing_log_res.status_code == 200:
-            all_insights = existing_log_res.json()
-    except Exception:
-        pass # It's okay if the file doesn't exist yet
+    # Use the helper function to load the log
+    previous_headlines = load_log_file(LOG_FILE)
 
-    previous_headlines = {item['source_headline'] for item in all_insights if 'source_headline' in item}
-    print(f"📚 Checking against {len(previous_headlines)} previously published headlines from the main log.", flush=True)
-    
+    print(f"📚 Checking against {len(previous_headlines)} headlines in '{LOG_FILE}'.", flush=True)
     for article in articles:
         if article.title in previous_headlines:
-            print(f"  - DUPLICATE (found in log): '{article.title}'", flush=True)
+            print(f"  - DUPLICATE: '{article.title}'", flush=True)
             continue
-        
+
         print(f"✅ Unique article found: '{article.title}'", flush=True)
-        print("--- De-duplication Finished ---", flush=True)
         return article
 
-    print("❌ No unique articles were found in the latest search results.", flush=True)
-    print("--- De-duplication Finished ---", flush=True)
+    print("❌ No unique articles found.", flush=True)
     return None
 
 def is_article_relevant(article_title, article_summary, client):
