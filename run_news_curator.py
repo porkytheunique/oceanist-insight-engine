@@ -153,14 +153,28 @@ def main():
         return
 
     # In main() for run_news_curator.py
-    print("\n--- Step 5: Finalizing and Saving Output ---", flush=True)
+    # In main() for run_news_curator.py, REPLACE the final "Step 5" block
+
+    print("\n--- Step 5: Finalizing and Archiving Output ---", flush=True)
     insight_data['date'] = datetime.utcnow().strftime('%Y-%m-%d')
     insight_data['source_headline'] = unique_article.title
     insight_data['source_url'] = unique_article.link
     
+    all_insights = []
+    log_url = 'https://www.oceanist.blue/map-data/news_insight.json' # URL for THIS script's log
+    try:
+        existing_log_res = requests.get(log_url)
+        if existing_log_res.status_code == 200:
+            all_insights = existing_log_res.json()
+            print(f"✅ Loaded existing news log with {len(all_insights)} insights.", flush=True)
+    except Exception as e:
+        print(f"⚠️ Could not load existing news log, will create a new one. Reason: {e}", flush=True)
+
+    all_insights.insert(0, insight_data)
+    
     with open("news_insight.json", 'w') as f:
-        json.dump(insight_data, f, indent=2)
-    print(f"✅ Successfully saved new insight to 'news_insight.json'.", flush=True)
+        json.dump(all_insights, f, indent=2)
+    print(f"✅ Saved updated news log with {len(all_insights)} total insights.", flush=True)
     
     with open(LOG_FILE, 'a') as f:
         f.write(insight_data['source_headline'] + '\n')
