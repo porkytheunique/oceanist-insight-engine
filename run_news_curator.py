@@ -46,27 +46,33 @@ def fetch_news_articles(keywords):
     print(f"📰 Found {len(entries)} potential articles in the top 5 results.", flush=True)
     return entries
 
+# In run_news_curator.py
+
 def find_unique_article(articles):
     print("\n--- Starting De-duplication Process ---", flush=True)
+    
+    # Check against the master log file on the server
+    all_insights = []
+    log_url = 'https://www.oceanist.blue/map-data/insights_log.json'
     try:
-        with open(LOG_FILE, 'r') as f:
-            previous_headlines = [line.strip() for line in f.readlines()]
-    except FileNotFoundError:
-        previous_headlines = []
-    print(f"📚 Checking against {len(previous_headlines)} previously published headlines in '{LOG_FILE}'.", flush=True)
+        existing_log_res = requests.get(log_url)
+        if existing_log_res.status_code == 200:
+            all_insights = existing_log_res.json()
+    except Exception:
+        pass # It's okay if the file doesn't exist yet
+
+    previous_headlines = {item['source_headline'] for item in all_insights if 'source_headline' in item}
+    print(f"📚 Checking against {len(previous_headlines)} previously published headlines from the main log.", flush=True)
+    
     for article in articles:
-        title_to_check = article.title
-        is_duplicate = False
-        for prev_headline in previous_headlines:
-            similarity = SequenceMatcher(None, title_to_check, prev_headline).ratio()
-            if similarity > SIMILARITY_THRESHOLD:
-                print(f"  - DUPLICATE (similarity: {similarity:.2f}): '{title_to_check}'", flush=True)
-                is_duplicate = True
-                break
-        if not is_duplicate:
-            print(f"✅ Unique article found: '{title_to_check}'", flush=True)
-            print("--- De-duplication Finished ---", flush=True)
-            return article
+        if article.title in previous_headlines:
+            print(f"  - DUPLICATE (found in log): '{article.title}'", flush=True)
+            continue
+        
+        print(f"✅ Unique article found: '{article.title}'", flush=True)
+        print("--- De-duplication Finished ---", flush=True)
+        return article
+
     print("❌ No unique articles were found in the latest search results.", flush=True)
     print("--- De-duplication Finished ---", flush=True)
     return None
