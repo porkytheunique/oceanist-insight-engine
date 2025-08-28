@@ -108,8 +108,42 @@ Return ONLY the raw JSON object.
         return None
 
 def main():
-    # ... (all setup and analysis logic up to the final step remains the same) ...
+    print("\n=============================================", flush=True)
+    print(f"🚀 Starting News Curator at {datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')} UTC", flush=True)
+    print("=============================================", flush=True)
+    
+    api_key = os.getenv('AI_API_KEY')
+    if not api_key:
+        print("⛔️ FATAL ERROR: AI_API_KEY secret not found.", flush=True); return
+    client = anthropic.Anthropic(api_key=api_key)
 
+    print("\n--- Step 1: Checking Schedule and Keywords ---", flush=True)
+    keywords = get_keywords_for_today()
+    if not keywords: return
+
+    print("\n--- Step 2: Fetching Existing Insights & News Articles ---", flush=True)
+    all_insights = []
+    try:
+        res = requests.get(SERVER_LOG_URL)
+        if res.status_code == 200:
+            data = res.json()
+            if isinstance(data, list): all_insights = data
+            elif isinstance(data, dict): all_insights = [data]
+            print(f"✅ Successfully loaded existing log with {len(all_insights)} insights.", flush=True)
+    except Exception as e:
+        print(f"⚠️ Could not load existing log, will create a new one. Reason: {e}", flush=True)
+    
+    articles = fetch_news_articles(keywords)
+    if not articles: return
+
+    print("\n--- Step 3: Finding a Unique Article ---", flush=True)
+    unique_article = find_unique_article(articles, all_insights)
+    if not unique_article: return
+
+    print("\n--- Step 4: AI Processing ---", flush=True)
+    if not is_article_relevant(unique_article, client):
+        print("❌ Article deemed not relevant by AI. Exiting.", flush=True); return
+        
     insight_data = summarize_article_with_ai(unique_article, client)
     if not insight_data:
         print("❌ AI failed to generate a valid summary. Exiting.", flush=True); return
@@ -119,17 +153,6 @@ def main():
     insight_data['source_headline'] = unique_article.title
     insight_data['source_url'] = unique_article.link
     
-    all_insights = []
-    try:
-        res = requests.get(SERVER_LOG_URL)
-        if res.status_code == 200:
-            data = res.json()
-            if isinstance(data, list): all_insights = data
-            elif isinstance(data, dict): all_insights = [data]
-            print(f"✅ Loaded existing news log with {len(all_insights)} insights.", flush=True)
-    except Exception:
-        print(f"⚠️ Could not load existing news log, will create a new one.", flush=True)
-
     all_insights.insert(0, insight_data)
     
     with open(OUTPUT_FILE, 'w') as f:
