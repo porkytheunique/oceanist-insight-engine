@@ -1,13 +1,13 @@
 {
   "tag": "#Fishing",
-  "content": "The world's busiest fishing hotspot is located in the East China Sea, off the coast of China's Zhejiang Province. This area is a crucial fishery, supporting both China's massive domestic seafood consumption and its substantial fishing export industry. The high number of fishing events (975) in this relatively small area highlights the intense industrial-scale fishing operations taking place, raising concerns about the sustainability of fish stocks and the impact on marine ecosystems.",
+  "content": "In the waters off northern Japan, a fishing vessel appears to have been detected operating within 100 meters of a Marine Protected Area boundary at coordinates [143.2676, 44.4631]. This proximity suggests the vessel may be engaging in 'fishing the line' - a practice where fishers operate as close as possible to protected area boundaries to target fish that aggregate along these edges. While this activity occurs in legal waters, it raises questions about the effectiveness of buffer zones around marine sanctuaries.",
   "map_view": {
     "center": [
-      122.5,
-      27.5
+      143.2676,
+      44.4631
     ],
-    "zoom": 5,
-    "maxZoom": 10
+    "zoom": 9,
+    "maxZoom": 14
   },
   "date": "2025-08-28"
 }
