@@ -1,0 +1,13 @@
+{
+  "tag": "#Fishing",
+  "content": "A fishing vessel was detected directly on the boundary of a Marine Protected Area (MPA). This observation is a classic example of 'fishing the line,' a practice where fishing activity intensifies along the edges of protected areas. Vessels often concentrate their efforts here because fish populations tend to spill over from the protected zone, making these boundary areas highly productive. However, this intense fishing pressure at MPA borders can potentially undermine conservation efforts and put protected ecosystems at risk.",
+  "map_view": {
+    "center": [
+      7.549,
+      53.7894
+    ],
+    "zoom": 9,
+    "maxZoom": 14
+  },
+  "date": "2025-08-28"
+}
