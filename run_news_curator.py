@@ -193,37 +193,21 @@ def main():
         print("❌ AI failed to generate a valid summary. Exiting.")
         return
 
-    # In all 3 python scripts, replace the final "Step 5" section
-    
-    print("\n--- Step 5: Finalizing and Saving Output ---")
-    insight_data['date'] = datetime.utcnow().strftime('%Y-%m-%d')
-    
-    # NEW LOGIC: Read the existing log, add the new insight, and write it back.
-    try:
-        # Try to download the existing log file from your server
-        log_url = 'https://www.oceanist.blue/map-data/insights_log.json' # Adjust this URL
-        existing_log_res = requests.get(log_url)
-        if existing_log_res.status_code == 200:
-            all_insights = existing_log_res.json()
-        else:
-            all_insights = []
-    except Exception as e:
-        print(f"  - ⚠️ Could not load existing log, will create a new one. Reason: {e}")
-        all_insights = []
+    # In the main() function, replace the final saving step with this:
+print("\n--- Step 5: Finalizing and Saving Output ---")
+insight_data['date'] = datetime.utcnow().strftime('%Y-%m-%d')
 
-    # Add the new insight to the top of the list
-    all_insights.insert(0, insight_data)
-    
-    # Save the updated full list to a file
-    with open("insights_log.json", 'w') as f:
-        json.dump(all_insights, f, indent=2)
-    print(f"✅ Successfully saved new insight to 'insights_log.json'.")
-    
-    # Also save the headline to the de-duplication log (for news curator only)
-    if 'source_headline' in insight_data:
-        with open(LOG_FILE, 'a') as f:
-            f.write(insight_data['source_headline'] + '\n')
-        print(f"✍️  Added '{insight_data['source_headline']}' to the de-duplication log.")
+with open("news_insight.json", 'w') as f:
+    json.dump(insight_data, f, indent=2)
+print(f"✅ Successfully saved new insight to 'news_insight.json'.")
+
+with open(LOG_FILE, 'a') as f:
+    f.write(insight_data['source_headline'] + '\n')
+print(f"✍️  Added '{insight_data['source_headline']}' to the de-duplication log.")
+
+print("\n=============================================")
+print(f"🏁 News Curator finished at {datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')} UTC")
+print("=============================================")
 
 if __name__ == "__main__":
     main()
