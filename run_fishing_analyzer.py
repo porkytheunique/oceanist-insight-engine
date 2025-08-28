@@ -209,7 +209,7 @@ Return ONLY the raw JSON object."""
     try:
         print(f"  - 🤖 Sending prompt for story type '{story_type}'...")
         message = client.messages.create(
-            model="claude-3-5-sonnet-20240620",
+            model="claude-sonnet-4-20250514",
             max_tokens=500,
             messages=[{"role": "user", "content": prompt}]
         ).content[0].text
