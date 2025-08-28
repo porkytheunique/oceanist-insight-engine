@@ -1,10 +1,10 @@
 {
   "tag": "#Fishing",
-  "content": "A fishing vessel was detected off the northwestern coast of Spain, near the region of Galicia. The vessel was observed at the exact boundary of a Marine Protected Area (MPA), a distance of 0.00 km from its limits. This practice is known as 'fishing the line,' where vessels operate as close as legally possible to protected areas. Such behavior can potentially undermine conservation efforts by targeting fish that move in and out of the protected zone.",
+  "content": "A fishing vessel has been detected in the East China Sea, near the waters around Okinawa, Japan. Our monitoring systems show the vessel operating at or very near a Marine Protected Area boundary, within approximately 100 meters of the designated zone. This behavior, known as 'fishing the line,' involves vessels positioning themselves as close as possible to protected area boundaries to maximize their catch while technically remaining in legal fishing zones. While this practice may be permissible, it raises concerns about potential impacts on marine ecosystems that conservation areas are designed to protect.",
   "map_view": {
     "center": [
-      -8.4296,
-      43.4327
+      127.668,
+      26.2649
     ],
     "zoom": 9,
     "maxZoom": 14
