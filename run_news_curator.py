@@ -5,13 +5,13 @@ import feedparser
 import anthropic
 from datetime import datetime
 from urllib.parse import quote_plus
-from difflib import SequenceMatcher # We need this for similarity checks
+from difflib import SequenceMatcher
 
 # --- Configuration ---
 OUTPUT_FILE = 'news_insight.json'
 SERVER_LOG_URL = 'https://www.oceanist.blue/map-data/news_insight.json'
 CONFIG_FILE = 'config.json'
-SIMILARITY_THRESHOLD = 0.9 # Headlines must be less than 90% similar
+SIMILARITY_THRESHOLD = 0.9
 
 def get_keywords_for_today():
     event_name = os.getenv('GITHUB_EVENT_NAME')
@@ -52,12 +52,10 @@ def find_unique_article(articles, existing_insights):
     print(f"📚 Checking against {len(published_urls)} previously published items.", flush=True)
 
     for article in articles:
-        # First, check the URL for an exact match
         if article.link in published_urls:
             print(f"  - DUPLICATE (URL Match): '{article.title}'", flush=True)
             continue
 
-        # Second, check for a very similar headline
         is_similar = False
         for headline in published_headlines:
             similarity = SequenceMatcher(None, article.title, headline).ratio()
