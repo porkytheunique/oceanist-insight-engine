@@ -5,11 +5,12 @@ import random
 import anthropic
 from datetime import datetime
 from shapely.geometry import shape, Point
+from rtree import index # New import for the spatial index
 
 # --- Configuration ---
 FISHING_DATA_URL = "https://porkytheunique.github.io/ocean-map-data/fishing_events.geojson"
 MPA_DATA_URL = "https://porkytheunique.github.io/ocean-map-data/WDPA2.json"
-OUTPUT_FILE = 'latest_insight.json'
+OUTPUT_FILE = 'fishing_insight.json'
 ANALYSIS_SAMPLE_SIZE = 500
 
 def fetch_geospatial_data():
@@ -33,7 +34,6 @@ def fetch_geospatial_data():
         mpa_response = requests.get(MPA_DATA_URL)
         mpa_response.raise_for_status()
         mpa_data = mpa_response.json()
-        # FIX: Use the 'geometries' key based on the user's file structure
         mpa_geometries = mpa_data.get('geometries', [])
         print(f"  ✅ Success: Loaded {len(mpa_geometries)} MPA geometries from the 'geometries' key.")
     except Exception as e:
@@ -44,24 +44,27 @@ def fetch_geospatial_data():
 
 def analyze_mpa_proximity(fishing_data, mpa_data):
     """
-    Finds a fishing event that is happening close to an MPA boundary.
+    Finds a fishing event that is happening close to an MPA boundary using a spatial index.
     """
     print("\n--- Starting Story Analysis: MPA Proximity ---")
-    # FIX: Check for 'geometries' and 'entries'
     mpa_geometries = mpa_data.get('geometries', [])
     fishing_events = fishing_data.get('entries', [])
 
-    if not mpa_geometries:
-        print("  - ❌ Cannot run MPA Proximity analysis: No MPA geometries were found.")
-        return None
-    if not fishing_events:
-        print("  - ❌ No fishing events to analyze.")
+    if not mpa_geometries or not fishing_events:
+        print("  - ❌ Cannot run analysis: Missing MPA or fishing data.")
         return None
 
     print(f"  - Pre-processing {len(mpa_geometries)} MPA geometries...")
-    # FIX: Create a simple list of shapes, as there are no names/properties
     mpa_shapes = [shape(geom) for geom in mpa_geometries if geom and geom.get('coordinates')]
     print(f"  - Successfully processed {len(mpa_shapes)} valid MPA shapes.")
+
+    # --- NEW: Build the Spatial Index ---
+    print("  - 🗺️ Building spatial index for all MPAs...")
+    idx = index.Index()
+    for pos, mpa_shape in enumerate(mpa_shapes):
+        idx.insert(pos, mpa_shape.bounds)
+    print("  - ✅ Spatial index built successfully.")
+    # ------------------------------------
         
     sample_size = min(len(fishing_events), ANALYSIS_SAMPLE_SIZE)
     fishing_sample = random.sample(fishing_events, sample_size)
@@ -71,14 +74,19 @@ def analyze_mpa_proximity(fishing_data, mpa_data):
     min_distance = float('inf')
 
     for i, event in enumerate(fishing_sample):
-        if i % 50 == 0:
+        if i % 100 == 0:
             print(f"    - Analyzing event {i}/{sample_size}...")
         
         coords = [event['position']['lon'], event['position']['lat']]
         point = Point(coords)
         
-        for mpa_shape in mpa_shapes:
-            distance = point.distance(mpa_shape)
+        # --- NEW: Query the index to find the nearest MPA(s) ---
+        # Find the 5 nearest MPA candidates from the index
+        nearest_mpa_indices = list(idx.nearest(point.bounds, 5))
+        
+        # Now, only check the distance against these few candidates
+        for mpa_idx in nearest_mpa_indices:
+            distance = point.distance(mpa_shapes[mpa_idx])
             if distance < min_distance:
                 min_distance = distance
                 closest_event = {
@@ -104,7 +112,6 @@ def generate_insight_with_ai(story_data, client):
     if story_data.get('story_type') == 'mpa_proximity':
         distance_km = story_data['distance_km']
         
-        # FIX: Updated prompt to be more generic since we don't have the MPA name
         prompt = f"""You are an expert science communicator for the website oceanist.blue. Your task is to analyze the following geospatial data and produce a JSON object for our 'Human Impact Map' insight feed.
 
 Analysis Result: A fishing vessel was detected {distance_km:.2f} km from the boundary of a Marine Protected Area.
