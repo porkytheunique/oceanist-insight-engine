@@ -26,7 +26,6 @@ jobs:
       contents: write
     runs-on: ubuntu-latest
     steps:
-      # ... (steps 1-4 for checkout, setup, install, run are the same) ...
       - name: Checkout repository
         uses: actions/checkout@v4
       - name: Set up Python
@@ -38,27 +37,25 @@ jobs:
       - name: Run the NEWS curator script
         env:
           AI_API_KEY: ${{ secrets.AI_API_KEY }}
+          GITHUB_EVENT_NAME: ${{ github.event_name }}
         run: python run_news_curator.py
       - name: Commit and push changes
         uses: stefanzweifel/git-auto-commit-action@v5
         with:
           commit_message: "feat(news): update news log and insight data"
           file_pattern: "*.log *.json"
-
       - name: Create deployment package
         run: mkdir dist && cp news_insight.json dist/
-
-      # --- CORRECTED DEPLOY STEP ---
       - name: Deploy insight file to server
         uses: SamKirkland/FTP-Deploy-Action@v4.3.4
         with:
           server: ${{ secrets.FTP_SERVER }}
           username: ${{ secrets.FTP_USERNAME }}
           password: ${{ secrets.FTP_PASSWORD }}
-          protocol: ftps # Use FTPS for FTP with TLS
-          port: 21 # Use Port 21 as per your settings
-          local-dir: ./dist/ 
-          server-dir: /public_html/map-data/ # Make sure this path is correct for your server
+          protocol: ftps
+          port: 21
+          local-dir: ./dist/
+          server-dir: /public_html/map-data/
 
   run-fishing-analyzer:
     if: |
@@ -80,22 +77,25 @@ jobs:
       - name: Run the FISHING analyzer script
         env:
           AI_API_KEY: ${{ secrets.AI_API_KEY }}
+          GITHUB_EVENT_NAME: ${{ github.event_name }}
         run: python run_fishing_analyzer.py
       - name: Commit and push changes
         uses: stefanzweifel/git-auto-commit-action@v5
         with:
           commit_message: "feat(fishing): update fishing insight data"
           file_pattern: "*.json"
+      - name: Create deployment package
+        run: mkdir dist && cp fishing_insight.json dist/
       - name: Deploy insight file to server
         uses: SamKirkland/FTP-Deploy-Action@v4.3.4
         with:
           server: ${{ secrets.FTP_SERVER }}
           username: ${{ secrets.FTP_USERNAME }}
           password: ${{ secrets.FTP_PASSWORD }}
-          local-dir: ./
+          protocol: ftps
+          port: 21
+          local-dir: ./dist/
           server-dir: /public_html/map-data/
-          exclude: "**"
-          include: "fishing_insight.json"
 
   run-oilgas-analyzer:
     if: |
@@ -117,19 +117,22 @@ jobs:
       - name: Run the OIL & GAS analyzer script
         env:
           AI_API_KEY: ${{ secrets.AI_API_KEY }}
+          GITHUB_EVENT_NAME: ${{ github.event_name }}
         run: python run_oilgas_analyzer.py
       - name: Commit and push changes
         uses: stefanzweifel/git-auto-commit-action@v5
         with:
           commit_message: "feat(oilgas): update oil & gas insight data"
           file_pattern: "*.json"
+      - name: Create deployment package
+        run: mkdir dist && cp oilgas_insight.json dist/
       - name: Deploy insight file to server
         uses: SamKirkland/FTP-Deploy-Action@v4.3.4
         with:
           server: ${{ secrets.FTP_SERVER }}
           username: ${{ secrets.FTP_USERNAME }}
           password: ${{ secrets.FTP_PASSWORD }}
-          local-dir: ./
+          protocol: ftps
+          port: 21
+          local-dir: ./dist/
           server-dir: /public_html/map-data/
-          exclude: "**"
-          include: "oilgas_insight.json"
