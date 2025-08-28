@@ -17,7 +17,6 @@ on:
 
 jobs:
   run-news-curator:
-    # This job only runs on its scheduled days OR if manually selected
     if: |
       (github.event_name == 'schedule' && (github.event.schedule == '30 1 * * 3' || github.event.schedule == '30 1 * * 0')) ||
       (github.event_name == 'workflow_dispatch' && github.event.inputs.script_to_run == 'news_curator')
@@ -48,10 +47,10 @@ jobs:
         uses: stefanzweifel/git-auto-commit-action@v5
         with:
           commit_message: "feat(news): update news log and insight data"
+          # This pattern will now catch any .log or .json file
           file_pattern: "*.log *.json"
 
   run-fishing-analyzer:
-    # This job only runs on its scheduled day OR if manually selected
     if: |
       (github.event_name == 'schedule' && github.event.schedule == '30 1 * * 1') ||
       (github.event_name == 'workflow_dispatch' && github.event.inputs.script_to_run == 'fishing_analyzer')
@@ -82,4 +81,5 @@ jobs:
         uses: stefanzweifel/git-auto-commit-action@v5
         with:
           commit_message: "feat(fishing): update fishing insight data"
-          file_pattern: "latest_insight.json"
+          # This pattern will now catch any .log or .json file
+          file_pattern: "*.log *.json"
