@@ -116,9 +116,6 @@ Return ONLY the raw JSON object and nothing else.
         return None
 
 def main():
-    # In run_news_curator.py, replace the entire main() function
-
-def main():
     # ... (all setup logic until the final saving step remains the same)
 
     print("\n--- Step 5: Finalizing and Saving Output ---", flush=True)
