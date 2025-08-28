@@ -10,7 +10,7 @@ from urllib.parse import quote_plus
 # --- Configuration ---
 CONFIG_FILE = 'config.json'
 LOG_FILE = 'published_headlines.log'
-OUTPUT_FILE = 'latest_insight.json' # Define the output file name
+OUTPUT_FILE = 'news_insight.json' # Define the output file name
 SIMILARITY_THRESHOLD = 0.9
 
 def get_keywords_for_today():
