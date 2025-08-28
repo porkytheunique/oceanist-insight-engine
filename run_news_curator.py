@@ -155,30 +155,32 @@ def main():
     # In main() for run_news_curator.py
     # In main() for run_news_curator.py, REPLACE the final "Step 5" block
 
-    print("\n--- Step 5: Finalizing and Archiving Output ---", flush=True)
+    print(f"\n--- Step 5: Finalizing and Archiving Output ---", flush=True)
     insight_data['date'] = datetime.utcnow().strftime('%Y-%m-%d')
     insight_data['source_headline'] = unique_article.title
     insight_data['source_url'] = unique_article.link
     
     all_insights = []
-    log_url = 'https://www.oceanist.blue/map-data/news_insight.json' # URL for THIS script's log
+    log_url = 'https://www.oceanist.blue/map-data/news_insight.json'
     try:
         existing_log_res = requests.get(log_url)
         if existing_log_res.status_code == 200:
-            all_insights = existing_log_res.json()
-            print(f"✅ Loaded existing news log with {len(all_insights)} insights.", flush=True)
+            data = existing_log_res.json()
+            # NEW ROBUSTNESS CHECK: Ensure the data is a list
+            if isinstance(data, list):
+                all_insights = data
+            elif isinstance(data, dict):
+                # If it's a single object, put it in a list
+                all_insights = [data] 
+            print(f"✅ Successfully loaded existing log with {len(all_insights)} insights.", flush=True)
     except Exception as e:
-        print(f"⚠️ Could not load existing news log, will create a new one. Reason: {e}", flush=True)
+        print(f"⚠️ Could not load existing log, will create a new one. Reason: {e}", flush=True)
 
     all_insights.insert(0, insight_data)
     
     with open("news_insight.json", 'w') as f:
         json.dump(all_insights, f, indent=2)
-    print(f"✅ Saved updated news log with {len(all_insights)} total insights.", flush=True)
-    
-    with open(LOG_FILE, 'a') as f:
-        f.write(insight_data['source_headline'] + '\n')
-    print(f"✍️  Added '{insight_data['source_headline']}' to the de-duplication log.", flush=True)
+    print(f"✅ Saved updated log with {len(all_insights)} total insights to 'news_insight.json'.", flush=True)
 
     print("\n=============================================", flush=True)
     print(f"🏁 News Curator finished at {datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')} UTC", flush=True)
