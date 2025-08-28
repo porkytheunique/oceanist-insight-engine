@@ -88,7 +88,7 @@ def is_article_relevant(article_title, article_summary, client):
 
 def summarize_article_with_ai(article, client):
     print("🤖 Step 4.2: Asking AI to summarize and structure the article...", flush=True)
-    prompt = f"""You are an expert science communicator for the website oceanist.blue. Your task is to analyze the following news article and produce a JSON object for our 'Human Impact Map' insight feed.
+    prompt = f"""You are an expert science communicator. Your task is to analyze the following news article and produce a JSON object for our 'Human Impact Map' insight feed.
 
 Article Title: {article.title}
 Article Link: {article.link}
