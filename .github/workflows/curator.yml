@@ -43,9 +43,9 @@ jobs:
           host: ${{ secrets.FTP_SERVER }}
           user: ${{ secrets.FTP_USERNAME }}
           password: ${{ secrets.FTP_PASSWORD }}
-          port: 21
-          # This command ONLY uploads, it will never delete.
-          command: upload news_insight.json /public_html/map-data/news_insight.json
+          # Correct syntax for this action to upload a single file
+          entryPoint: lftp
+          args: -e "set ftp:ssl-force true; set ftp:ssl-protect-data true; put -O /public_html/map-data/ news_insight.json; exit"
 
   run-fishing-analyzer:
     if: |
@@ -75,8 +75,8 @@ jobs:
           host: ${{ secrets.FTP_SERVER }}
           user: ${{ secrets.FTP_USERNAME }}
           password: ${{ secrets.FTP_PASSWORD }}
-          port: 21
-          command: upload fishing_insight.json /public_html/map-data/fishing_insight.json
+          entryPoint: lftp
+          args: -e "set ftp:ssl-force true; set ftp:ssl-protect-data true; put -O /public_html/map-data/ fishing_insight.json; exit"
 
   run-oilgas-analyzer:
     if: |
@@ -106,5 +106,5 @@ jobs:
           host: ${{ secrets.FTP_SERVER }}
           user: ${{ secrets.FTP_USERNAME }}
           password: ${{ secrets.FTP_PASSWORD }}
-          port: 21
-          command: upload oilgas_insight.json /public_html/map-data/oilgas_insight.json
+          entryPoint: lftp
+          args: -e "set ftp:ssl-force true; set ftp:ssl-protect-data true; put -O /public_html/map-data/ oilgas_insight.json; exit"
