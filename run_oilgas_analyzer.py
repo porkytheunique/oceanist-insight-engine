@@ -115,16 +115,18 @@ def generate_insight_with_ai(story_data, client):
     platform_name = story_data['platform_name']
     platform_country = story_data['platform_country']
     coral_ecoregion = story_data['coral_ecoregion']
-    distance_km = story_data['distance_km']
+    # NEW: Round the distance to one decimal place for a less overly precise figure
+    distance_km = round(story_data['distance_km'], 1) 
     platform_coords = story_data['platform_coords']
 
+    # NEW: Updated prompt to use more cautious language
     prompt = f"""You are a science communicator for oceanist.blue. Analyze the following data and produce a JSON object for our insight feed.
 
-Analysis Result: The '{platform_name}' oil and gas platform, located in the waters of {platform_country}, was found to be operating approximately {distance_km:.2f} km from a coral reef in the '{coral_ecoregion}' ecoregion. The platform is at coordinates {platform_coords}.
+Analysis Result: The '{platform_name}' oil and gas platform, in the waters of {platform_country}, was found to be operating approximately {distance_km} km from a coral reef in the '{coral_ecoregion}' ecoregion. The platform is at {platform_coords}.
 
 Based on this, create a JSON object:
 - "tag": Use the hashtag #FossilFuels.
-- "content": Write a 3-4 sentence analysis. Start by stating the location and the fact. Then, briefly explain the potential environmental risks that offshore oil and gas infrastructure (like oil spills, drilling muds, or noise pollution) pose to nearby fragile ecosystems like coral reefs.
+- "content": Write a 3-4 sentence analysis. Start by stating the location and the fact. **Use approximate and cautious language (e.g., 'approximately 8.7 km', 'just over 8 km') to reflect the nature of geospatial data.** Then, briefly explain the potential environmental risks that offshore infrastructure poses to nearby fragile ecosystems like coral reefs.
 - "map_view": An object with "center": {platform_coords}, "zoom": 8, and "maxZoom": 12.
 
 Return ONLY the raw JSON object and nothing else.
