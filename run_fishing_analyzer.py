@@ -123,7 +123,7 @@ def analyze_eez_focus(fishing_data, mpa_data):
     return story_data
 
 def generate_insight_with_ai(story_data, client):
-    print("\n--- Step 4: Generating AI Insight ---", flush=True)
+    print("\n--- Generating AI Insight ---", flush=True)
     prompt = ""
     story_type = story_data.get('story_type')
     if story_type == 'mpa_proximity':
@@ -146,16 +146,36 @@ def generate_insight_with_ai(story_data, client):
         print(f"  - ❌ AI insight generation failed: {e}", flush=True); return None
 
 def main():
-    # ... (all setup and analysis logic up to the final step remains the same) ...
+    print("\n=============================================", flush=True)
+    print(f"🎣 Starting Fishing Analyzer at {datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')} UTC", flush=True)
+    print("=============================================", flush=True)
     
-    insight_data = generate_insight_with_ai(story_data, client)
-    if not insight_data:
-        print("❌ Script finished: AI failed to generate a valid insight.", flush=True); return
+    event_name = os.getenv('GITHUB_EVENT_NAME')
+    if event_name == 'schedule':
+        today_weekday = datetime.utcnow().weekday()
+        if today_weekday != 0:
+            print(f"🗓️ Today is weekday {today_weekday}, but this job only runs on Mondays (0). Exiting.", flush=True); return
+    print("🗓️ Running fishing analysis (manual run or correct day).", flush=True)
+    
+    api_key = os.getenv('AI_API_KEY')
+    if not api_key: print("⛔️ FATAL ERROR: AI_API_KEY secret not found.", flush=True); return
+    client = anthropic.Anthropic(api_key=api_key)
+
+    print("\n--- Step 2: Fetching Geospatial Data ---", flush=True)
+    fishing_data, mpa_data = fetch_geospatial_data()
+    if not fishing_data: return
+
+    print("\n--- Step 3: Performing Story Analysis (Roulette) ---", flush=True)
+    story_functions = [analyze_mpa_proximity, analyze_global_hotspot, analyze_eez_focus]
+    if not mpa_data: story_functions.remove(analyze_mpa_proximity)
+    if not story_functions:
+        print("❌ Script finished: Not enough data for any analysis.", flush=True); return
+    chosen_story_function = random.choice(story_functions)
+    story_data = chosen_story_function(fishing_data, mpa_data)
+    if not story_data:
+        print("❌ Script finished: No compelling story found.", flush=True); return
         
-    print("\n--- Step 5: Finalizing and Archiving Output ---", flush=True)
-    insight_data['date'] = today_date
-    insight_data['unique_id'] = unique_id
-    
+    print("\n--- Step 4: De-duplication Check & Log Loading ---", flush=True)
     all_insights = []
     try:
         res = requests.get(SERVER_LOG_URL)
@@ -164,9 +184,24 @@ def main():
             if isinstance(data, list): all_insights = data
             elif isinstance(data, dict): all_insights = [data]
             print(f"✅ Loaded existing fishing log with {len(all_insights)} insights.", flush=True)
-    except Exception:
-        print(f"⚠️ Could not load existing fishing log, will create a new one.", flush=True)
+    except Exception as e:
+        print(f"⚠️ Could not load existing fishing log, will create a new one. Reason: {e}", flush=True)
+    
+    today_date = datetime.utcnow().strftime('%Y-%m-%d')
+    unique_id = f"{story_data['story_type']}-{today_date}"
+    is_duplicate = any(item.get('unique_id') == unique_id for item in all_insights)
+    
+    if is_duplicate:
+        print(f"❌ Duplicate story type for today found ('{unique_id}'). Exiting.", flush=True); return
 
+    insight_data = generate_insight_with_ai(story_data, client)
+    if not insight_data:
+        print("❌ Script finished: AI failed to generate a valid insight.", flush=True); return
+        
+    print("\n--- Step 5: Finalizing and Archiving Output ---", flush=True)
+    insight_data['date'] = today_date
+    insight_data['unique_id'] = unique_id
+    
     all_insights.insert(0, insight_data)
     
     with open(OUTPUT_FILE, 'w') as f:
