@@ -5,7 +5,7 @@ import random
 import anthropic
 from datetime import datetime
 from shapely.geometry import shape, Point
-from rtree import index # New import for the spatial index
+from rtree import index
 
 # --- Configuration ---
 FISHING_DATA_URL = "https://porkytheunique.github.io/ocean-map-data/fishing_events.geojson"
@@ -14,9 +14,7 @@ OUTPUT_FILE = 'fishing_insight.json'
 ANALYSIS_SAMPLE_SIZE = 500
 
 def fetch_geospatial_data():
-    """
-    Downloads the fishing and MPA GeoJSON data from their URLs.
-    """
+    # ... (This function remains the same, omitted for brevity)
     print("🌎 Fetching geospatial data...")
     try:
         print(f"  - Downloading fishing data from {FISHING_DATA_URL}...")
@@ -44,9 +42,10 @@ def fetch_geospatial_data():
 
 def analyze_mpa_proximity(fishing_data, mpa_data):
     """
-    Finds a fishing event that is happening close to an MPA boundary using a spatial index.
+    Finds a fishing event that is happening close to an MPA boundary.
     """
     print("\n--- Starting Story Analysis: MPA Proximity ---")
+    # ... (This function is mostly the same, with one small change for nuance)
     mpa_geometries = mpa_data.get('geometries', [])
     fishing_events = fishing_data.get('entries', [])
 
@@ -58,13 +57,11 @@ def analyze_mpa_proximity(fishing_data, mpa_data):
     mpa_shapes = [shape(geom) for geom in mpa_geometries if geom and geom.get('coordinates')]
     print(f"  - Successfully processed {len(mpa_shapes)} valid MPA shapes.")
 
-    # --- NEW: Build the Spatial Index ---
     print("  - 🗺️ Building spatial index for all MPAs...")
     idx = index.Index()
     for pos, mpa_shape in enumerate(mpa_shapes):
         idx.insert(pos, mpa_shape.bounds)
     print("  - ✅ Spatial index built successfully.")
-    # ------------------------------------
         
     sample_size = min(len(fishing_events), ANALYSIS_SAMPLE_SIZE)
     fishing_sample = random.sample(fishing_events, sample_size)
@@ -80,11 +77,8 @@ def analyze_mpa_proximity(fishing_data, mpa_data):
         coords = [event['position']['lon'], event['position']['lat']]
         point = Point(coords)
         
-        # --- NEW: Query the index to find the nearest MPA(s) ---
-        # Find the 5 nearest MPA candidates from the index
         nearest_mpa_indices = list(idx.nearest(point.bounds, 5))
         
-        # Now, only check the distance against these few candidates
         for mpa_idx in nearest_mpa_indices:
             distance = point.distance(mpa_shapes[mpa_idx])
             if distance < min_distance:
@@ -96,12 +90,56 @@ def analyze_mpa_proximity(fishing_data, mpa_data):
 
     if closest_event:
         print("  ✅ Analysis Complete: Found a notable proximity event.")
-        print(f"     - Closest Event: A fishing vessel was detected {closest_event['distance_km']:.2f} km from the boundary of a nearby Marine Protected Area.")
+        # NUANCE FIX: Handle the 0.00 km case with more cautious language
+        distance_text = f"{closest_event['distance_km']:.2f} km"
+        if closest_event['distance_km'] < 0.1:
+            distance_text = "less than 100 meters"
+        
+        print(f"     - Closest Event: A fishing vessel was detected {distance_text} from a nearby MPA.")
         closest_event['story_type'] = 'mpa_proximity'
+        closest_event['distance_text'] = distance_text
         return closest_event
     else:
         print("  - ❌ Analysis Complete: Could not find a notable event in the sample.")
         return None
+
+# --- NEW ANALYSIS FUNCTION ---
+def analyze_global_hotspot(fishing_data, mpa_data=None):
+    """
+    Finds the busiest 5x5 degree grid cell of fishing activity in the world.
+    """
+    print("\n--- Starting Story Analysis: Global Fishing Hotspot ---")
+    fishing_events = fishing_data.get('entries', [])
+    if not fishing_events:
+        print("  - ❌ No fishing events to analyze.")
+        return None
+
+    print(f"  - Analyzing all {len(fishing_events)} events to find the global hotspot...")
+    grid = {}
+    # Create a 5x5 degree grid and count events in each cell
+    for event in fishing_events:
+        lon = int(event['position']['lon'] // 5 * 5)
+        lat = int(event['position']['lat'] // 5 * 5)
+        cell = (lon, lat)
+        grid[cell] = grid.get(cell, 0) + 1
+    
+    if not grid:
+        print("  - ❌ Could not generate grid.")
+        return None
+
+    # Find the cell with the most events
+    hotspot_cell = max(grid, key=grid.get)
+    hotspot_count = grid[hotspot_cell]
+    
+    story_data = {
+        "story_type": "global_hotspot",
+        "center_coords": [hotspot_cell[0] + 2.5, hotspot_cell[1] + 2.5], # Center of the cell
+        "event_count": hotspot_count
+    }
+    
+    print("  ✅ Analysis Complete: Found the global fishing hotspot.")
+    print(f"     - Hotspot: The 5x5 degree cell centered near {story_data['center_coords']} had {story_data['event_count']} fishing events.")
+    return story_data
 
 def generate_insight_with_ai(story_data, client):
     """
@@ -109,30 +147,46 @@ def generate_insight_with_ai(story_data, client):
     """
     print("\n--- Step 4: Generating AI Insight ---")
     
+    # --- UPDATED TO HANDLE MULTIPLE STORY TYPES ---
     if story_data.get('story_type') == 'mpa_proximity':
-        distance_km = story_data['distance_km']
+        distance_text = story_data['distance_text']
         fishing_coords = story_data['fishing_coords']
         
-        # NEW: Updated prompt with location-awareness
-        prompt = f"""You are an expert science communicator for the website oceanist.blue. Your task is to analyze the following geospatial data and produce a JSON object for our 'Human Impact Map' insight feed.
+        prompt = f"""You are a science communicator for oceanist.blue. Analyze the following data and produce a JSON object for our insight feed.
 
-Analysis Result: A fishing vessel was detected {distance_km:.2f} km from the boundary of a Marine Protected Area. The event occurred at coordinates {fishing_coords}.
+Analysis Result: A fishing vessel was detected at a distance of {distance_text} from a Marine Protected Area boundary. The event occurred at coordinates {fishing_coords}.
 
-Based on this, create a JSON object with the following structure:
-- "tag": Use the hashtag #Fishing.
-- "content": Write a 3-4 sentence analysis. **Start by identifying the general geographic region based on the coordinates (e.g., 'in the North Sea', 'off the coast of Japan').** Then, state the fact about the vessel's proximity to the MPA and briefly explain the concept of 'fishing the line.'
-- "map_view": An object with "center" (the fishing vessel's coordinates: {fishing_coords}), "zoom": 9, and "maxZoom": 14.
+Based on this, create a JSON object:
+- "tag": Use #Fishing.
+- "content": Write a 3-4 sentence analysis. Start by identifying the geographic region from the coordinates. Then, state the fact about the vessel's proximity. **Use cautious language like 'at or very near the boundary' due to potential data inaccuracies.** Explain the concept of 'fishing the line'.
+- "map_view": An object with "center": {fishing_coords}, "zoom": 9, and "maxZoom": 14.
 
-Return ONLY the raw JSON object and nothing else.
+Return ONLY the raw JSON object.
+"""
+    elif story_data.get('story_type') == 'global_hotspot':
+        center_coords = story_data['center_coords']
+        event_count = story_data['event_count']
+
+        prompt = f"""You are a science communicator for oceanist.blue. Analyze the following data and produce a JSON object for our insight feed.
+
+Analysis Result: The world's busiest fishing hotspot in our recent data is the 5x5 degree area centered at coordinates {center_coords}. This area contained {event_count} distinct fishing events.
+
+Based on this, create a JSON object:
+- "tag": Use #Fishing.
+- "content": Write a 3-4 sentence analysis. Start by identifying the major ocean basin or sea corresponding to the coordinates. Discuss why this region is a significant global fishing ground (e.g., major currents, upwelling zones, known fisheries). Explain how this concentration of activity highlights the industrial scale of modern fishing.
+- "map_view": An object with "center": {center_coords}, "zoom": 5, and "maxZoom": 10.
+
+Return ONLY the raw JSON object.
 """
     else:
-        print("  - ❌ Error: Unknown story type. Cannot generate prompt.")
+        print("  - ❌ Error: Unknown story type.")
         return None
 
     try:
+        # ... (AI call logic remains the same, omitted for brevity)
         print("  - 🤖 Sending prompt to AI...")
         message = client.messages.create(
-            model="claude-3-5-sonnet-20240620",
+            model="claude-sonnet-4-20250514",
             max_tokens=500,
             messages=[{"role": "user", "content": prompt}]
         ).content[0].text
@@ -163,15 +217,28 @@ def main():
     if not fishing_data:
         print("❌ Script finished: Could not retrieve fishing data.")
         return
-    print("\n--- Step 3: Performing Story Analysis ---")
-    story_data = analyze_mpa_proximity(fishing_data, mpa_data)
+
+    print("\n--- Step 3: Performing Story Analysis (Roulette) ---")
+    # --- NEW: STORY ROULETTE LOGIC ---
+    # Create a list of available analysis functions
+    story_functions = [
+        analyze_mpa_proximity,
+        analyze_global_hotspot
+    ]
+    # Randomly select one function to run
+    chosen_story_function = random.choice(story_functions)
+    story_data = chosen_story_function(fishing_data, mpa_data)
+    # ------------------------------------
+
     if not story_data:
         print("❌ Script finished: No compelling story found in the data analysis.")
         return
+        
     insight_data = generate_insight_with_ai(story_data, client)
     if not insight_data:
         print("❌ Script finished: AI failed to generate a valid insight.")
         return
+        
     print("\n--- Step 5: Finalizing and Saving Output ---")
     insight_data['date'] = datetime.utcnow().strftime('%Y-%m-%d')
     with open(OUTPUT_FILE, 'w') as f:
