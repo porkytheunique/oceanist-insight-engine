@@ -135,7 +135,7 @@ Return ONLY the raw JSON object and nothing else.
     try:
         print(f"  - 🤖 Sending prompt to AI...")
         message = client.messages.create(
-            model="claude-3-5-sonnet-20240620", # Or your preferred model
+            model="claude-sonnet-4-20250514", # Or your preferred model
             max_tokens=500,
             messages=[{"role": "user", "content": prompt}]
         ).content[0].text
