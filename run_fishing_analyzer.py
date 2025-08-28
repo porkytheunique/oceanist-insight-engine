@@ -176,9 +176,54 @@ Return ONLY the raw JSON object."""
 
 # In run_fishing_analyzer.py, replace the entire main() function
 
-def main():
-    # ... (all setup logic until the final saving step remains the same)
+# In run_fishing_analyzer.py, replace the entire main() function with this:
 
+def main():
+    print("\n=============================================", flush=True)
+    print(f"🎣 Starting Fishing Analyzer at {datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')} UTC", flush=True)
+    print("=============================================", flush=True)
+    
+    event_name = os.getenv('GITHUB_EVENT_NAME')
+    if event_name == 'schedule':
+        today_weekday = datetime.utcnow().weekday()
+        if today_weekday != 0: # Monday
+            print(f"🗓️ Today is weekday {today_weekday}, but this job only runs on Mondays (0). Exiting.", flush=True)
+            return
+    print("🗓️ Running fishing analysis (manual run or correct day).", flush=True)
+    
+    api_key = os.getenv('AI_API_KEY')
+    if not api_key:
+        print("⛔️ FATAL ERROR: AI_API_KEY secret not found.", flush=True)
+        return
+    client = anthropic.Anthropic(api_key=api_key)
+
+    print("\n--- Step 2: Fetching Geospatial Data ---", flush=True)
+    fishing_data, mpa_data = fetch_geospatial_data()
+    if not fishing_data:
+        return
+
+    print("\n--- Step 3: Performing Story Analysis (Roulette) ---", flush=True)
+    story_functions = []
+    if mpa_data and fishing_data:
+        story_functions.append(analyze_mpa_proximity)
+    if fishing_data:
+        story_functions.append(analyze_global_hotspot)
+        story_functions.append(analyze_eez_focus)
+    if not story_functions:
+        print("❌ Script finished: Not enough data for any analysis.", flush=True)
+        return
+    chosen_story_function = random.choice(story_functions)
+    story_data = chosen_story_function(fishing_data, mpa_data)
+    
+    if not story_data:
+        print("❌ Script finished: No compelling story found.", flush=True)
+        return
+        
+    insight_data = generate_insight_with_ai(story_data, client)
+    if not insight_data:
+        print("❌ Script finished: AI failed to generate a valid insight.", flush=True)
+        return
+        
     print("\n--- Step 5: Finalizing and Saving Output ---", flush=True)
     insight_data['date'] = datetime.utcnow().strftime('%Y-%m-%d')
     
