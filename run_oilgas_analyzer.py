@@ -153,24 +153,12 @@ def main():
     if not insight_data:
         return
         
+    # In main() for run_oilgas_analyzer.py
     print("\n--- Step 4: Finalizing and Saving Output ---", flush=True)
     insight_data['date'] = datetime.utcnow().strftime('%Y-%m-%d')
-
-    all_insights = []
-    log_url = 'https://www.oceanist.blue/map-data/insights_log.json'
-    try:
-        existing_log_res = requests.get(log_url)
-        if existing_log_res.status_code == 200:
-            all_insights = existing_log_res.json()
-            print(f"✅ Successfully loaded existing log with {len(all_insights)} insights.", flush=True)
-    except Exception as e:
-        print(f"⚠️ Could not load existing log, will create a new one. Reason: {e}", flush=True)
-
-    all_insights.insert(0, insight_data)
-    
-    with open("insights_log.json", 'w') as f:
-        json.dump(all_insights, f, indent=2)
-    print(f"✅ Saved updated log with {len(all_insights)} total insights to 'insights_log.json'.", flush=True)
+    with open("oilgas_insight.json", 'w') as f:
+        json.dump(insight_data, f, indent=2)
+    print(f"✅ Successfully saved new insight to 'oilgas_insight.json'.", flush=True)
     
     print("\n=============================================", flush=True)
     print(f"🏁 Oil & Gas Analyzer finished at {datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')} UTC", flush=True)
