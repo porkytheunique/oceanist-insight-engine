@@ -115,15 +115,48 @@ Return ONLY the raw JSON object and nothing else.
         print(f"❌ AI summarization failed: {e}", flush=True)
         return None
 
+# In run_news_curator.py, replace the entire main() function with this:
+
 def main():
-    # ... (all setup logic until the final saving step remains the same)
+    print("\n=============================================", flush=True)
+    print(f"🚀 Starting News Curator at {datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')} UTC", flush=True)
+    print("=============================================", flush=True)
+    api_key = os.getenv('AI_API_KEY')
+    if not api_key:
+        print("⛔️ FATAL ERROR: AI_API_KEY secret not found.", flush=True)
+        return
+    client = anthropic.Anthropic(api_key=api_key)
+
+    print("\n--- Step 1: Checking Schedule and Keywords ---", flush=True)
+    keywords = get_keywords_for_today()
+    if not keywords:
+        return
+
+    print("\n--- Step 2: Fetching News Articles ---", flush=True)
+    articles = fetch_news_articles(keywords)
+    if not articles:
+        return
+
+    print("\n--- Step 3: Finding a Unique Article ---", flush=True)
+    unique_article = find_unique_article(articles)
+    if not unique_article:
+        return
+
+    print("\n--- Step 4: AI Processing ---", flush=True)
+    if not is_article_relevant(unique_article.title, unique_article.summary, client):
+        print("❌ Article deemed not relevant by AI. Exiting.", flush=True)
+        return
+        
+    insight_data = summarize_article_with_ai(unique_article, client)
+    if not insight_data:
+        print("❌ AI failed to generate a valid summary. Exiting.", flush=True)
+        return
 
     print("\n--- Step 5: Finalizing and Saving Output ---", flush=True)
     insight_data['date'] = datetime.utcnow().strftime('%Y-%m-%d')
     insight_data['source_headline'] = unique_article.title
     insight_data['source_url'] = unique_article.link
     
-    # NEW LOGIC: Read the existing log, add the new insight, and write it back.
     all_insights = []
     log_url = 'https://www.oceanist.blue/map-data/insights_log.json'
     try:
@@ -134,10 +167,8 @@ def main():
     except Exception as e:
         print(f"⚠️ Could not load existing log, will create a new one. Reason: {e}", flush=True)
 
-    # Add the new insight to the top of the list
     all_insights.insert(0, insight_data)
     
-    # Save the updated full list to a file
     with open("insights_log.json", 'w') as f:
         json.dump(all_insights, f, indent=2)
     print(f"✅ Saved updated log with {len(all_insights)} total insights to 'insights_log.json'.", flush=True)
