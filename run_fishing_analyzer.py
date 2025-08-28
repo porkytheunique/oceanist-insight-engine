@@ -8,7 +8,6 @@ from shapely.geometry import shape, Point
 
 # --- Configuration ---
 FISHING_DATA_URL = "https://porkytheunique.github.io/ocean-map-data/fishing_events.geojson"
-# Updated with your new file name
 MPA_DATA_URL = "https://porkytheunique.github.io/ocean-map-data/WDPA2.json"
 OUTPUT_FILE = 'latest_insight.json'
 ANALYSIS_SAMPLE_SIZE = 500
@@ -22,17 +21,9 @@ def fetch_geospatial_data():
         print(f"  - Downloading fishing data from {FISHING_DATA_URL}...")
         fishing_response = requests.get(FISHING_DATA_URL)
         fishing_response.raise_for_status()
-        
-        # --- NEW DEBUGGING LOGS ---
-        print("  - Snippet of raw fishing data received:")
-        print(f"    {fishing_response.text[:500]}") # Print the first 500 characters
-        
         fishing_data = fishing_response.json()
-        
-        print("  - Top-level keys in parsed fishing JSON:", list(fishing_data.keys()))
-        # ---------------------------
-
-        print(f"  ✅ Success: Loaded {len(fishing_data.get('features', []))} fishing events.")
+        fishing_events = fishing_data.get('entries', [])
+        print(f"  ✅ Success: Loaded {len(fishing_events)} fishing events from the 'entries' key.")
     except Exception as e:
         print(f"  ❌ FATAL ERROR: Could not fetch or parse fishing data: {e}")
         return None, None
@@ -42,7 +33,9 @@ def fetch_geospatial_data():
         mpa_response = requests.get(MPA_DATA_URL)
         mpa_response.raise_for_status()
         mpa_data = mpa_response.json()
-        print(f"  ✅ Success: Loaded {len(mpa_data.get('features', []))} MPA features.")
+        # FIX: Use the 'geometries' key based on the user's file structure
+        mpa_geometries = mpa_data.get('geometries', [])
+        print(f"  ✅ Success: Loaded {len(mpa_geometries)} MPA geometries from the 'geometries' key.")
     except Exception as e:
         print(f"  ❌ FATAL ERROR: Could not fetch or parse MPA data: {e}")
         return fishing_data, None
@@ -54,24 +47,24 @@ def analyze_mpa_proximity(fishing_data, mpa_data):
     Finds a fishing event that is happening close to an MPA boundary.
     """
     print("\n--- Starting Story Analysis: MPA Proximity ---")
-    if not mpa_data:
-        print("  - ❌ Cannot run MPA Proximity analysis: MPA data failed to load.")
+    # FIX: Check for 'geometries' and 'entries'
+    mpa_geometries = mpa_data.get('geometries', [])
+    fishing_events = fishing_data.get('entries', [])
+
+    if not mpa_geometries:
+        print("  - ❌ Cannot run MPA Proximity analysis: No MPA geometries were found.")
         return None
-
-    print(f"  - Pre-processing {len(mpa_data['features'])} MPA geometries...")
-    mpa_polygons = {
-        mpa['properties'].get('NAME', 'Unnamed Area'): shape(mpa['geometry'])
-        for mpa in mpa_data['features'] if mpa.get('geometry')
-    }
-    print(f"  - Successfully processed {len(mpa_polygons)} valid MPA geometries.")
-
-    all_fishing_events = fishing_data.get('features', [])
-    if not all_fishing_events:
+    if not fishing_events:
         print("  - ❌ No fishing events to analyze.")
         return None
+
+    print(f"  - Pre-processing {len(mpa_geometries)} MPA geometries...")
+    # FIX: Create a simple list of shapes, as there are no names/properties
+    mpa_shapes = [shape(geom) for geom in mpa_geometries if geom and geom.get('coordinates')]
+    print(f"  - Successfully processed {len(mpa_shapes)} valid MPA shapes.")
         
-    sample_size = min(len(all_fishing_events), ANALYSIS_SAMPLE_SIZE)
-    fishing_sample = random.sample(all_fishing_events, sample_size)
+    sample_size = min(len(fishing_events), ANALYSIS_SAMPLE_SIZE)
+    fishing_sample = random.sample(fishing_events, sample_size)
     print(f"  - Analyzing a random sample of {sample_size} fishing events.")
 
     closest_event = None
@@ -81,21 +74,21 @@ def analyze_mpa_proximity(fishing_data, mpa_data):
         if i % 50 == 0:
             print(f"    - Analyzing event {i}/{sample_size}...")
         
-        point = Point(event['geometry']['coordinates'])
-        for mpa_name, mpa_poly in mpa_polygons.items():
-            distance = point.distance(mpa_poly)
+        coords = [event['position']['lon'], event['position']['lat']]
+        point = Point(coords)
+        
+        for mpa_shape in mpa_shapes:
+            distance = point.distance(mpa_shape)
             if distance < min_distance:
                 min_distance = distance
                 closest_event = {
-                    "mpa_name": mpa_name,
-                    "distance_degrees": distance,
                     "distance_km": distance * 111.32,
-                    "fishing_coords": event['geometry']['coordinates']
+                    "fishing_coords": coords
                 }
 
     if closest_event:
         print("  ✅ Analysis Complete: Found a notable proximity event.")
-        print(f"     - Closest Event: A fishing vessel was detected {closest_event['distance_km']:.2f} km from the boundary of '{closest_event['mpa_name']}'.")
+        print(f"     - Closest Event: A fishing vessel was detected {closest_event['distance_km']:.2f} km from the boundary of a nearby Marine Protected Area.")
         closest_event['story_type'] = 'mpa_proximity'
         return closest_event
     else:
@@ -109,12 +102,12 @@ def generate_insight_with_ai(story_data, client):
     print("\n--- Step 4: Generating AI Insight ---")
     
     if story_data.get('story_type') == 'mpa_proximity':
-        mpa_name = story_data['mpa_name']
         distance_km = story_data['distance_km']
         
+        # FIX: Updated prompt to be more generic since we don't have the MPA name
         prompt = f"""You are an expert science communicator for the website oceanist.blue. Your task is to analyze the following geospatial data and produce a JSON object for our 'Human Impact Map' insight feed.
 
-Analysis Result: A fishing vessel was detected {distance_km:.2f} km from the boundary of the '{mpa_name}' Marine Protected Area.
+Analysis Result: A fishing vessel was detected {distance_km:.2f} km from the boundary of a Marine Protected Area.
 
 Based on this, create a JSON object with the following structure:
 - "tag": Use the hashtag #Fishing.
