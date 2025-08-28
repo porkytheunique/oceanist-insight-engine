@@ -1,10 +1,10 @@
 {
   "tag": "#Fishing",
-  "content": "In the waters off northern Japan, a fishing vessel appears to have been detected operating within 100 meters of a Marine Protected Area boundary at coordinates [143.2676, 44.4631]. This proximity suggests the vessel may be engaging in 'fishing the line' - a practice where fishers operate as close as possible to protected area boundaries to target fish that aggregate along these edges. While this activity occurs in legal waters, it raises questions about the effectiveness of buffer zones around marine sanctuaries.",
+  "content": "In the North Sea waters off the English coast, satellite monitoring appears to have detected a fishing vessel operating within approximately 100 meters of a Marine Protected Area boundary. This proximity suggests the vessel may have been engaged in 'fishing the line' - a practice where commercial fishing operations work as close as possible to protected area boundaries to access potentially productive waters where fish may aggregate along the edges of no-take zones. Such activities, while potentially legal depending on exact positioning and local regulations, raise concerns about compliance monitoring and the effectiveness of marine conservation boundaries.",
   "map_view": {
     "center": [
-      143.2676,
-      44.4631
+      2.1415,
+      51.6419
     ],
     "zoom": 9,
     "maxZoom": 14
