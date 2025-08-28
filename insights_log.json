@@ -1,0 +1,15 @@
+[
+  {
+    "tag": "#CoralReefs",
+    "content": "A groundbreaking study has revealed crucial insights into the connectivity of mesophotic reefs in the northern Gulf of Mexico. These deep-water reefs, found between 30-150 meters below the surface, play a vital role in marine ecosystems but are often overlooked in conservation efforts. The research highlights the importance of understanding reef networks for effective marine protection and could inform future strategies for preserving these unique underwater habitats.",
+    "map_view": {
+      "center": [
+        27.5,
+        -90
+      ],
+      "zoom": 6,
+      "maxZoom": 10
+    },
+    "date": "2025-08-28"
+  }
+]
