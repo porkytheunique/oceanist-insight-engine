@@ -222,6 +222,8 @@ Return ONLY the raw JSON object."""
         print(f"  - ❌ AI insight generation failed: {e}")
         return None
 
+# In run_fishing_analyzer.py
+
 def main():
     """
     Main function to run the fishing analysis process.
@@ -229,12 +231,26 @@ def main():
     print("\n=============================================")
     print(f"🎣 Starting Fishing Analyzer at {datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')} UTC")
     print("=============================================")
-    print("🗓️ Running scheduled fishing analysis.")
+    
+    # Check how the workflow was triggered
+    event_name = os.getenv('GITHUB_EVENT_NAME')
+    
+    # Only check the schedule if it's a scheduled run
+    if event_name == 'schedule':
+        today_weekday = datetime.utcnow().weekday()
+        if today_weekday != 0: # Monday is 0
+             print(f"🗓️ Today is weekday {today_weekday}, but this job only runs on Mondays (0). Exiting.")
+             return
+
+    print("🗓️ Running fishing analysis (manual run or correct day).")
+    
     api_key = os.getenv('AI_API_KEY')
     if not api_key:
         print("⛔️ FATAL ERROR: AI_API_KEY secret not found.")
         return
     client = anthropic.Anthropic(api_key=api_key)
+
+    # ... (the rest of the main function is the same) ...
     print("\n--- Step 2: Fetching Geospatial Data ---")
     fishing_data, mpa_data = fetch_geospatial_data()
     if not fishing_data:
