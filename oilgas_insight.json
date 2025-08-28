@@ -1,10 +1,10 @@
 {
   "tag": "#FossilFuels",
-  "content": "The 'Morgan' oil and gas platform in Egyptian waters is operating just 8.65 km from a coral reef in the Northern and Central Red Sea ecoregion. This proximity raises concerns about potential environmental impacts on the fragile marine ecosystem. Offshore oil and gas infrastructure can pose significant risks to coral reefs, including the possibility of oil spills, contamination from drilling muds, and disruption from noise pollution. These threats could lead to long-term damage to the biodiversity and health of the nearby coral reef system.",
+  "content": "The Mahar oil and gas platform operates in Myanmar waters at approximately 92.63\u00b0E, 19.39\u00b0N, located roughly 63.7 km from coral reefs in the Northern Bay of Bengal ecoregion. While this distance provides some buffer, offshore fossil fuel infrastructure can still pose environmental risks to nearby marine ecosystems through potential oil spills, chemical discharge, and underwater noise pollution. Coral reefs are particularly vulnerable to hydrocarbon contamination, which can cause bleaching, reduced reproductive success, and long-term ecosystem degradation. The proximity underscores the importance of stringent environmental monitoring and spill response protocols in this ecologically sensitive region.",
   "map_view": {
     "center": [
-      33.447,
-      28.214
+      92.63,
+      19.39
     ],
     "zoom": 8,
     "maxZoom": 12
