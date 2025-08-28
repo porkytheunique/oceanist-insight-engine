@@ -8,7 +8,8 @@ from shapely.geometry import shape, Point
 
 # --- Configuration ---
 FISHING_DATA_URL = "https://porkytheunique.github.io/ocean-map-data/fishing_events.geojson"
-MPA_DATA_URL = "https://porkytheunique.github.io/ocean-map-data/WDPA.json"
+# Updated with your new file name
+MPA_DATA_URL = "https://porkytheunique.github.io/ocean-map-data/WDPA2.json"
 OUTPUT_FILE = 'latest_insight.json'
 ANALYSIS_SAMPLE_SIZE = 500
 
@@ -21,7 +22,16 @@ def fetch_geospatial_data():
         print(f"  - Downloading fishing data from {FISHING_DATA_URL}...")
         fishing_response = requests.get(FISHING_DATA_URL)
         fishing_response.raise_for_status()
+        
+        # --- NEW DEBUGGING LOGS ---
+        print("  - Snippet of raw fishing data received:")
+        print(f"    {fishing_response.text[:500]}") # Print the first 500 characters
+        
         fishing_data = fishing_response.json()
+        
+        print("  - Top-level keys in parsed fishing JSON:", list(fishing_data.keys()))
+        # ---------------------------
+
         print(f"  ✅ Success: Loaded {len(fishing_data.get('features', []))} fishing events.")
     except Exception as e:
         print(f"  ❌ FATAL ERROR: Could not fetch or parse fishing data: {e}")
@@ -55,7 +65,11 @@ def analyze_mpa_proximity(fishing_data, mpa_data):
     }
     print(f"  - Successfully processed {len(mpa_polygons)} valid MPA geometries.")
 
-    all_fishing_events = fishing_data['features']
+    all_fishing_events = fishing_data.get('features', [])
+    if not all_fishing_events:
+        print("  - ❌ No fishing events to analyze.")
+        return None
+        
     sample_size = min(len(all_fishing_events), ANALYSIS_SAMPLE_SIZE)
     fishing_sample = random.sample(all_fishing_events, sample_size)
     print(f"  - Analyzing a random sample of {sample_size} fishing events.")
@@ -82,7 +96,6 @@ def analyze_mpa_proximity(fishing_data, mpa_data):
     if closest_event:
         print("  ✅ Analysis Complete: Found a notable proximity event.")
         print(f"     - Closest Event: A fishing vessel was detected {closest_event['distance_km']:.2f} km from the boundary of '{closest_event['mpa_name']}'.")
-        # Add a story type for the AI prompt
         closest_event['story_type'] = 'mpa_proximity'
         return closest_event
     else:
@@ -95,7 +108,6 @@ def generate_insight_with_ai(story_data, client):
     """
     print("\n--- Step 4: Generating AI Insight ---")
     
-    # We can have different prompts for different story types in the future.
     if story_data.get('story_type') == 'mpa_proximity':
         mpa_name = story_data['mpa_name']
         distance_km = story_data['distance_km']
@@ -138,45 +150,31 @@ def main():
     print("\n=============================================")
     print(f"🎣 Starting Fishing Analyzer at {datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')} UTC")
     print("=============================================")
-
     print("🗓️ Running scheduled fishing analysis.")
-    
     api_key = os.getenv('AI_API_KEY')
     if not api_key:
         print("⛔️ FATAL ERROR: AI_API_KEY secret not found.")
         return
-        
     client = anthropic.Anthropic(api_key=api_key)
-
     print("\n--- Step 2: Fetching Geospatial Data ---")
     fishing_data, mpa_data = fetch_geospatial_data()
-    
     if not fishing_data:
         print("❌ Script finished: Could not retrieve fishing data.")
         return
-
     print("\n--- Step 3: Performing Story Analysis ---")
     story_data = analyze_mpa_proximity(fishing_data, mpa_data)
-
     if not story_data:
         print("❌ Script finished: No compelling story found in the data analysis.")
         return
-
-    # --- REPLACED PLACEHOLDER ---
     insight_data = generate_insight_with_ai(story_data, client)
-
     if not insight_data:
         print("❌ Script finished: AI failed to generate a valid insight.")
         return
-        
     print("\n--- Step 5: Finalizing and Saving Output ---")
     insight_data['date'] = datetime.utcnow().strftime('%Y-%m-%d')
-    
     with open(OUTPUT_FILE, 'w') as f:
         json.dump(insight_data, f, indent=2)
     print(f"✅ Successfully saved new insight to '{OUTPUT_FILE}'.")
-
-
     print("\n=============================================")
     print(f"🏁 Fishing Analyzer finished at {datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')} UTC")
     print("=============================================")
