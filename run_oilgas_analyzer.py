@@ -148,6 +148,8 @@ Return ONLY the raw JSON object and nothing else.
         print(f"  - ❌ AI insight generation failed: {e}")
         return None
 
+# In run_oilgas_analyzer.py, replace the entire main() function with this:
+
 def main():
     """
     Main function to run the oil & gas analysis process.
@@ -155,6 +157,17 @@ def main():
     print("\n=============================================")
     print(f"🛢️ Starting Oil & Gas Analyzer at {datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')} UTC")
     print("=============================================")
+
+    event_name = os.getenv('GITHUB_EVENT_NAME')
+
+    if event_name == 'schedule':
+        today_weekday = datetime.utcnow().weekday()
+        if today_weekday != 4: # Friday is 4
+             print(f"🗓️ Today is weekday {today_weekday}, but this job only runs on Fridays (4). Exiting.")
+             return
+             
+    print("🗓️ Running oil & gas analysis (manual run or correct day).")
+
     api_key = os.getenv('AI_API_KEY')
     if not api_key:
         print("⛔️ FATAL ERROR: AI_API_KEY secret not found.")
@@ -178,15 +191,14 @@ def main():
         print("❌ Script finished: AI failed to generate a valid insight.")
         return
         
-    # In the main() function, replace the final saving step with this:
-print("\n--- Step 4: Finalizing and Saving Output ---")
-insight_data['date'] = datetime.utcnow().strftime('%Y-%m-%d')
-with open("oilgas_insight.json", 'w') as f:
-    json.dump(insight_data, f, indent=2)
-print(f"✅ Successfully saved new insight to 'oilgas_insight.json'.")
-print("\n=============================================")
-print(f"🏁 Oil & Gas Analyzer finished at {datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')} UTC")
-print("=============================================")
+    print("\n--- Step 4: Finalizing and Saving Output ---")
+    insight_data['date'] = datetime.utcnow().strftime('%Y-%m-%d')
+    with open("oilgas_insight.json", 'w') as f:
+        json.dump(insight_data, f, indent=2)
+    print(f"✅ Successfully saved new insight to 'oilgas_insight.json'.")
+    print("\n=============================================")
+    print(f"🏁 Oil & Gas Analyzer finished at {datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')} UTC")
+    print("=============================================")
 
 if __name__ == "__main__":
     main()
