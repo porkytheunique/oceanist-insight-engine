@@ -1,0 +1,32 @@
+name: 📰 News Curator
+
+on:
+  schedule:
+    - cron: '30 1 * * 3,0' # Runs on Wed & Sun
+  workflow_dispatch:
+
+jobs:
+  run-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+      - run: pip install -r requirements.txt
+      - name: Run NEWS script
+        env:
+          AI_API_KEY: ${{ secrets.AI_API_KEY }}
+        run: python run_news_curator.py
+      - name: ⬆️ Upload news_insight.json
+        uses: sebastianpopp/ftp-action@releases/v2
+        with:
+          host: ${{ secrets.FTP_SERVER }}
+          user: ${{ secrets.FTP_USERNAME }}
+          password: ${{ secrets.FTP_PASSWORD }}
+          port: 21
+          command: |
+            set ftp:ssl-force true
+            set ftp:ssl-protect-data true
+            set ssl:verify-certificate false
+            put -O /public_html/map-data/ news_insight.json
