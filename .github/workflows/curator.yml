@@ -55,8 +55,10 @@ jobs:
 
       - name: ⬆️ Upload insight file to Server
         run: |
+          # Install the FTP client
           sudo apt-get -y install lftp
 
+          # Determine which file was created by the scripts
           if [ -f "news_insight.json" ]; then
             FILE_TO_UPLOAD="news_insight.json"
           elif [ -f "fishing_insight.json" ]; then
@@ -64,18 +66,18 @@ jobs:
           elif [ -f "oilgas_insight.json" ]; then
             FILE_TO_UPLOAD="oilgas_insight.json"
           else
-            echo "No insight file generated, skipping upload."
+            echo "No insight file was generated, skipping upload."
             exit 0
           fi
 
-          echo "Uploading $FILE_TO_UPLOAD..."
+          echo "Uploading $FILE_TO_UPLOAD to /public_html/map-data/ ..."
           
-          # This command includes the fix to bypass the certificate check
+          # Run the secure FTP command to upload ONLY the generated file
           lftp -c "
             set ftp:ssl-force true;
             set ftp:ssl-protect-data true;
-            set ssl:verify-certificate no; 
-            open -u ${{ secrets.FTP_USERNAME }},${{ secrets.FTP_PASSWORD }} -p 21 ${{ secrets.FTP_SERVER }};
+            set ssl:verify-certificate no;
+            open -u '${{ secrets.FTP_USERNAME }},${{ secrets.FTP_PASSWORD }}' -p 21 ${{ secrets.FTP_SERVER }};
             cd /public_html/map-data/;
             put -O . $FILE_TO_UPLOAD;
             bye;
