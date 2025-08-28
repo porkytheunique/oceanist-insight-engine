@@ -116,48 +116,39 @@ Return ONLY the raw JSON object and nothing else.
         return None
 
 def main():
-    print("\n=============================================", flush=True)
-    print(f"🚀 Starting News Curator at {datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')} UTC", flush=True)
-    print("=============================================", flush=True)
-    api_key = os.getenv('AI_API_KEY')
-    if not api_key:
-        print("⛔️ FATAL ERROR: AI_API_KEY secret not found.", flush=True)
-        return
-    client = anthropic.Anthropic(api_key=api_key)
-    print("\n--- Step 1: Checking Schedule and Keywords ---", flush=True)
-    keywords = get_keywords_for_today()
-    if not keywords:
-        print("✅ Script finished: Not a scheduled day.", flush=True)
-        return
-    print(f"🔑 Keywords for today: {keywords}", flush=True)
-    print("\n--- Step 2: Fetching News Articles ---", flush=True)
-    articles = fetch_news_articles(keywords)
-    if not articles:
-        print("✅ Script finished: No articles found.", flush=True)
-        return
-    print("\n--- Step 3: Finding a Unique Article ---", flush=True)
-    unique_article = find_unique_article(articles)
-    if not unique_article:
-        print("✅ Script finished: No unique article to process.", flush=True)
-        return
-    print("\n--- Step 4: AI Processing ---", flush=True)
-    if not is_article_relevant(unique_article.title, unique_article.summary, client):
-        print("❌ Article deemed not relevant by AI. Exiting.", flush=True)
-        return
-    insight_data = summarize_article_with_ai(unique_article, client)
-    if not insight_data:
-        print("❌ AI failed to generate a valid summary. Exiting.", flush=True)
-        return
+    # In run_news_curator.py, replace the entire main() function
+
+def main():
+    # ... (all setup logic until the final saving step remains the same)
+
     print("\n--- Step 5: Finalizing and Saving Output ---", flush=True)
     insight_data['date'] = datetime.utcnow().strftime('%Y-%m-%d')
     insight_data['source_headline'] = unique_article.title
     insight_data['source_url'] = unique_article.link
-    with open(OUTPUT_FILE, 'w') as f:
-        json.dump(insight_data, f, indent=2)
-    print(f"✅ Successfully saved new insight to '{OUTPUT_FILE}'.", flush=True)
+    
+    # NEW LOGIC: Read the existing log, add the new insight, and write it back.
+    all_insights = []
+    log_url = 'https://www.oceanist.blue/map-data/insights_log.json'
+    try:
+        existing_log_res = requests.get(log_url)
+        if existing_log_res.status_code == 200:
+            all_insights = existing_log_res.json()
+            print(f"✅ Successfully loaded existing log with {len(all_insights)} insights.", flush=True)
+    except Exception as e:
+        print(f"⚠️ Could not load existing log, will create a new one. Reason: {e}", flush=True)
+
+    # Add the new insight to the top of the list
+    all_insights.insert(0, insight_data)
+    
+    # Save the updated full list to a file
+    with open("insights_log.json", 'w') as f:
+        json.dump(all_insights, f, indent=2)
+    print(f"✅ Saved updated log with {len(all_insights)} total insights to 'insights_log.json'.", flush=True)
+    
     with open(LOG_FILE, 'a') as f:
         f.write(insight_data['source_headline'] + '\n')
     print(f"✍️  Added '{insight_data['source_headline']}' to the de-duplication log.", flush=True)
+
     print("\n=============================================", flush=True)
     print(f"🏁 News Curator finished at {datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')} UTC", flush=True)
     print("=============================================", flush=True)
