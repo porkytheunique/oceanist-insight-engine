@@ -13,6 +13,22 @@ LOG_FILE = 'published_headlines.log'
 OUTPUT_FILE = 'news_insight.json'
 SIMILARITY_THRESHOLD = 0.9
 
+# Add these two functions to the top of all three .py files
+
+def load_log_file(filename):
+    """Loads a log file and returns a set of its lines."""
+    try:
+        with open(filename, 'r') as f:
+            return set(line.strip() for line in f.readlines())
+    except FileNotFoundError:
+        return set()
+
+def update_log_file(filename, entry_to_add):
+    """Adds a new entry to a log file."""
+    with open(filename, 'a') as f:
+        f.write(entry_to_add + '\n')
+    print(f"✍️  Added '{entry_to_add}' to '{filename}'.", flush=True)
+
 def get_keywords_for_today():
     event_name = os.getenv('GITHUB_EVENT_NAME')
     with open(CONFIG_FILE, 'r') as f:
