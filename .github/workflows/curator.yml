@@ -15,7 +15,7 @@ on:
         - oilgas_analyzer
 
 jobs:
-  run-analysis:
+  run-and-deploy:
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -52,19 +52,32 @@ jobs:
         uses: stefanzweifel/git-auto-commit-action@v5
         with:
           commit_message: "feat(data): update insight and log files"
-          file_pattern: "*.log *.json"
 
-      - name: ⬆️ Upload insight log to Server (No Deletions)
-        uses: SamKirkland/FTP-Deploy-Action@v4.3.4
-        with:
-          server: ${{ secrets.FTP_SERVER }}
-          username: ${{ secrets.FTP_USERNAME }}
-          password: ${{ secrets.FTP_PASSWORD }}
-          protocol: ftps
-          port: 21
-          # This uploads the single log file into the server directory
-          local-dir: ./
-          server-dir: /public_html/map-data/
-          # This is the correct way to upload ONLY the log file and touch NOTHING else
-          exclude: "**"
-          include: "insights_log.json"
+      - name: ⬆️ Upload insight file to Server
+        run: |
+          # Install the FTP client
+          sudo apt-get -y install lftp
+
+          # Determine which file was created
+          if [ -f "news_insight.json" ]; then
+            FILE_TO_UPLOAD="news_insight.json"
+          elif [ -f "fishing_insight.json" ]; then
+            FILE_TO_UPLOAD="fishing_insight.json"
+          elif [ -f "oilgas_insight.json" ]; then
+            FILE_TO_UPLOAD="oilgas_insight.json"
+          else
+            echo "No insight file generated, skipping upload."
+            exit 0
+          fi
+
+          echo "Uploading $FILE_TO_UPLOAD..."
+          
+          # Run the secure FTP command
+          lftp -c "
+            set ftp:ssl-force true;
+            set ftp:ssl-protect-data true;
+            open -u ${{ secrets.FTP_USERNAME }},${{ secrets.FTP_PASSWORD }} -p 21 ${{ secrets.FTP_SERVER }};
+            cd /public_html/map-data/;
+            put -O . $FILE_TO_UPLOAD;
+            bye;
+          "
