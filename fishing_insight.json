@@ -1,13 +1,13 @@
 {
   "tag": "#Fishing",
-  "content": "In the North Sea waters off the English coast, satellite monitoring appears to have detected a fishing vessel operating within approximately 100 meters of a Marine Protected Area boundary. This proximity suggests the vessel may have been engaged in 'fishing the line' - a practice where commercial fishing operations work as close as possible to protected area boundaries to access potentially productive waters where fish may aggregate along the edges of no-take zones. Such activities, while potentially legal depending on exact positioning and local regulations, raise concerns about compliance monitoring and the effectiveness of marine conservation boundaries.",
+  "content": "The most active fishing zone corresponds to Taiwan's Exclusive Economic Zone (EEZ), with 2,714 recorded fishing events. This EEZ encompasses critical fishing grounds in the Taiwan Strait and surrounding waters, supporting both commercial and subsistence fishing operations that are vital to Taiwan's maritime economy. An Exclusive Economic Zone extends up to 200 nautical miles from a country's coastline, granting that nation exclusive rights to explore, exploit, and manage marine resources including fish stocks. The high activity in this zone reflects Taiwan's significant role in regional fisheries and the productive nature of these western Pacific waters.",
   "map_view": {
     "center": [
-      2.1415,
-      51.6419
+      121.5708,
+      28.2538
     ],
-    "zoom": 9,
-    "maxZoom": 14
+    "zoom": 5,
+    "maxZoom": 10
   },
   "date": "2025-08-28"
 }
