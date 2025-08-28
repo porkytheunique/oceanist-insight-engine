@@ -1,6 +1,21 @@
 [
   {
     "tag": "#CoralReefs",
+    "content": "A new study reveals significant coral loss in Vietnam's first marine protected area, highlighting the ongoing threats facing Southeast Asian coral ecosystems. Despite protective measures, the marine sanctuary has experienced substantial degradation, raising concerns about the effectiveness of current conservation strategies. This finding underscores the urgent need for enhanced protection measures and better management of marine protected areas in the region. The study adds to growing evidence of widespread coral decline across the Indo-Pacific, one of the world's most biodiverse marine regions.",
+    "map_view": {
+      "center": [
+        12.2,
+        109.2
+      ],
+      "zoom": 6,
+      "maxZoom": 10
+    },
+    "date": "2025-08-28",
+    "source_headline": "Major coral loss in Vietnam\u2019s first marine protected area: Study - Mongabay",
+    "source_url": "https://news.google.com/rss/articles/CBMiqwFBVV95cUxNdkZIUTl0Zm5MRl9aaW1jRmhZbGxKTk9zTmdMSWJKN0MzQzJWSEItVnNTWVRtTjEzbzV1ZVFjZzBMR2x5U0xnZ08xWm4zWlFEb09Sc1dRQThmUjlsWWpwcS1MTjVGZ1NPeEdVZThOSjJQcF9XcDZzUEJWYkZLd0QtZkhheHpWcGdtVDZQVTV3Mmg4aHJwWFRGdVlkc3o0ZHMtUUp2RzdUbE40WHM?oc=5"
+  },
+  {
+    "tag": "#CoralReefs",
     "content": "A new study reveals devastating coral loss in Vietnam's first marine protected area, highlighting the ongoing threats facing these critical ecosystems even within supposedly safeguarded waters. The findings underscore the challenges of coral conservation in Southeast Asia, where reefs face mounting pressures from climate change, pollution, and human activities. This research adds to growing evidence that current protection measures may be insufficient to prevent coral degradation in the region's biodiversity hotspots.",
     "map_view": {
       "center": [
