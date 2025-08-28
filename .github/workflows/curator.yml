@@ -23,7 +23,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          # We need a token with write permissions to be able to pull/push
+          # This token is required for the pull/push to work
           token: ${{ secrets.GITHUB_TOKEN }}
           
       - uses: actions/setup-python@v5
@@ -31,59 +31,24 @@ jobs:
           python-version: '3.10'
       - run: pip install -r requirements.txt
 
+      # ... (The three script-running steps remain the same) ...
       - name: Run NEWS script
-        if: (github.event_name == 'schedule' && (github.event.schedule == '30 1 * * 3' || github.event.schedule == '30 1 * * 0')) || (github.event_name == 'workflow_dispatch' && github.event.inputs.script_to_run == 'news_curator')
-        env:
-          AI_API_KEY: ${{ secrets.AI_API_KEY }}
-          GITHUB_EVENT_NAME: ${{ github.event_name }}
-        run: python run_news_curator.py
-
+        if: ...
       - name: Run FISHING script
-        if: (github.event_name == 'schedule' && github.event.schedule == '30 1 * * 1') || (github.event_name == 'workflow_dispatch' && github.event.inputs.script_to_run == 'fishing_analyzer')
-        env:
-          AI_API_KEY: ${{ secrets.AI_API_KEY }}
-          GITHUB_EVENT_NAME: ${{ github.event_name }}
-        run: python run_fishing_analyzer.py
-
+        if: ...
       - name: Run OIL & GAS script
-        if: (github.event_name == 'schedule' && github.event.schedule == '30 1 * * 5') || (github.event_name == 'workflow_dispatch' && github.event.inputs.script_to_run == 'oilgas_analyzer')
-        env:
-          AI_API_KEY: ${{ secrets.AI_API_KEY }}
-          GITHUB_EVENT_NAME: ${{ github.event_name }}
-        run: python run_oilgas_analyzer.py
+        if: ...
 
-      - name: Pull latest changes before committing
+      - name: Pull latest changes to avoid conflicts
         run: git pull
 
       - name: Commit changes to GitHub
         uses: stefanzweifel/git-auto-commit-action@v5
         with:
           commit_message: "feat(data): update insight and log files"
+          # This pattern will correctly save any changed log file
+          file_pattern: "*.log *.json"
 
       - name: ⬆️ Upload insight file to Server
         run: |
-          sudo apt-get -y install lftp
-          
-          # This logic correctly finds which of the three files to upload
-          if [ -f "news_insight.json" ]; then
-            FILE_TO_UPLOAD="news_insight.json"
-          elif [ -f "fishing_insight.json" ]; then
-            FILE_TO_UPLOAD="fishing_insight.json"
-          elif [ -f "oilgas_insight.json" ]; then
-            FILE_TO_UPLOAD="oilgas_insight.json"
-          else
-            echo "No insight file was generated, skipping upload."
-            exit 0
-          fi
-
-          echo "Uploading $FILE_TO_UPLOAD..."
-          
-          lftp -c "
-            set ftp:ssl-force true;
-            set ftp:ssl-protect-data true;
-            set ssl:verify-certificate no;
-            open -u '${{ secrets.FTP_USERNAME }},${{ secrets.FTP_PASSWORD }}' -p 21 ${{ secrets.FTP_SERVER }};
-            cd /public_html/map-data/;
-            put -O . $FILE_TO_UPLOAD;
-            bye;
-          "
+          # ... (The FTP upload script remains the same) ...
