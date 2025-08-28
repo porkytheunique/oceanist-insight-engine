@@ -144,6 +144,8 @@ Return ONLY the raw JSON object and nothing else.
         print(f"❌ AI summarization failed: {e}")
         return None
 
+# In run_news_curator.py, replace the entire main() function with this:
+
 def main():
     """
     Main function to run the news curation process.
@@ -157,7 +159,6 @@ def main():
         print("⛔️ FATAL ERROR: AI_API_KEY secret not found.")
         return
 
-    # Initialize the AI client
     client = anthropic.Anthropic(api_key=api_key)
 
     print("\n--- Step 1: Checking Schedule and Keywords ---")
@@ -179,35 +180,28 @@ def main():
         print("✅ Script finished: No unique article to process.")
         return
 
-    # --- REPLACED PLACEHOLDER WITH AI LOGIC ---
     print("\n--- Step 4: AI Processing ---")
-    # First, a quick, cheap check if the article is relevant.
     if not is_article_relevant(unique_article.title, unique_article.summary, client):
         print("❌ Article deemed not relevant by AI. Exiting.")
         return
 
-    # If relevant, proceed with the full summarization.
     insight_data = summarize_article_with_ai(unique_article, client)
     
     if not insight_data:
         print("❌ AI failed to generate a valid summary. Exiting.")
         return
 
-    # In the main() function, replace the final saving step with this:
-print("\n--- Step 5: Finalizing and Saving Output ---")
-insight_data['date'] = datetime.utcnow().strftime('%Y-%m-%d')
+    print("\n--- Step 5: Finalizing and Saving Output ---")
+    insight_data['date'] = datetime.utcnow().strftime('%Y-%m-%d')
+    
+    with open("news_insight.json", 'w') as f:
+        json.dump(insight_data, f, indent=2)
+    print(f"✅ Successfully saved new insight to 'news_insight.json'.")
+    
+    with open(LOG_FILE, 'a') as f:
+        f.write(insight_data['source_headline'] + '\n')
+    print(f"✍️  Added '{insight_data['source_headline']}' to the de-duplication log.")
 
-with open("news_insight.json", 'w') as f:
-    json.dump(insight_data, f, indent=2)
-print(f"✅ Successfully saved new insight to 'news_insight.json'.")
-
-with open(LOG_FILE, 'a') as f:
-    f.write(insight_data['source_headline'] + '\n')
-print(f"✍️  Added '{insight_data['source_headline']}' to the de-duplication log.")
-
-print("\n=============================================")
-print(f"🏁 News Curator finished at {datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')} UTC")
-print("=============================================")
-
-if __name__ == "__main__":
-    main()
+    print("\n=============================================")
+    print(f"🏁 News Curator finished at {datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')} UTC")
+    print("=============================================")
