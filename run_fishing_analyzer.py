@@ -111,15 +111,17 @@ def generate_insight_with_ai(story_data, client):
     
     if story_data.get('story_type') == 'mpa_proximity':
         distance_km = story_data['distance_km']
+        fishing_coords = story_data['fishing_coords']
         
+        # NEW: Updated prompt with location-awareness
         prompt = f"""You are an expert science communicator for the website oceanist.blue. Your task is to analyze the following geospatial data and produce a JSON object for our 'Human Impact Map' insight feed.
 
-Analysis Result: A fishing vessel was detected {distance_km:.2f} km from the boundary of a Marine Protected Area.
+Analysis Result: A fishing vessel was detected {distance_km:.2f} km from the boundary of a Marine Protected Area. The event occurred at coordinates {fishing_coords}.
 
 Based on this, create a JSON object with the following structure:
 - "tag": Use the hashtag #Fishing.
-- "content": Write a 3-4 sentence analysis. Start by stating the fact. Then, briefly explain the concept of 'fishing the line' and why intense fishing activity often clusters around the edges of MPAs, putting these protected ecosystems at risk.
-- "map_view": An object with "center" (the fishing vessel's coordinates: {story_data['fishing_coords']}), "zoom": 9, and "maxZoom": 14.
+- "content": Write a 3-4 sentence analysis. **Start by identifying the general geographic region based on the coordinates (e.g., 'in the North Sea', 'off the coast of Japan').** Then, state the fact about the vessel's proximity to the MPA and briefly explain the concept of 'fishing the line.'
+- "map_view": An object with "center" (the fishing vessel's coordinates: {fishing_coords}), "zoom": 9, and "maxZoom": 14.
 
 Return ONLY the raw JSON object and nothing else.
 """
