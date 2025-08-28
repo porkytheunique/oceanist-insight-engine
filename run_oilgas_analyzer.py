@@ -38,12 +38,19 @@ def fetch_geospatial_data():
         coral_data = None
     return platform_data, coral_data
 
+# In run_oilgas_analyzer.py
+
 def analyze_coral_proximity(platform_data, coral_data):
+    """
+    Finds a random oil/gas platform that is CLOSE to a coral reef.
+    """
     print("\n--- Starting Story Analysis: Coral Proximity ---", flush=True)
     platform_features = platform_data.get('features', [])
     coral_features = coral_data.get('features', [])
     if not platform_features or not coral_features:
         print("  - ❌ Cannot run analysis: Missing platform or coral data.", flush=True); return None
+
+    # ... (pre-processing and index building is the same) ...
     print(f"  - Pre-processing {len(coral_features)} coral reef geometries...", flush=True)
     coral_shapes = [shape(geom['geometry']) for geom in coral_features if geom.get('geometry')]
     print(f"  - Successfully processed {len(coral_shapes)} valid coral reef shapes.", flush=True)
@@ -58,31 +65,39 @@ def analyze_coral_proximity(platform_data, coral_data):
             valid_shapes_for_index.append(coral_shape)
             original_indices.append(i)
     print(f"  - ✅ Spatial index built successfully with {len(valid_shapes_for_index)} valid shapes.", flush=True)
-    platform = random.choice(platform_features)
-    platform_point = shape(platform['geometry'])
-    print(f"  - Analyzing a random platform: '{platform['properties'].get('Unit Name', 'Unnamed')}'", flush=True)
-    nearest_coral_indices_map = list(idx.nearest(platform_point.bounds, 5))
-    min_distance = float('inf')
-    closest_coral_feature = None
-    for mapped_idx in nearest_coral_indices_map:
+
+    # Try a few random platforms to find one that is close enough
+    for _ in range(20): # Try up to 20 times to find a close one
+        platform = random.choice(platform_features)
+        platform_point = shape(platform['geometry'])
+        
+        nearest_coral_indices_map = list(idx.nearest(platform_point.bounds, 1))
+        if not nearest_coral_indices_map:
+            continue
+            
+        mapped_idx = nearest_coral_indices_map[0]
         original_idx = original_indices[mapped_idx]
         distance = platform_point.distance(valid_shapes_for_index[mapped_idx])
-        if distance < min_distance:
-            min_distance = distance
+        distance_km = distance * 111.32
+
+        # --- NEW THRESHOLD CHECK ---
+        # Only consider it a story if it's within 200 km
+        if distance_km <= 200:
+            print(f"  - Analyzing platform: '{platform['properties'].get('Unit Name', 'Unnamed')}'")
             closest_coral_feature = coral_features[original_idx]
-    if closest_coral_feature:
-        story_data = {
-            "platform_name": platform['properties'].get('Unit Name', 'Unnamed Platform'),
-            "platform_country": platform['properties'].get('Country/Area', 'an unknown location'),
-            "platform_coords": platform['geometry']['coordinates'],
-            "coral_ecoregion": closest_coral_feature['properties'].get('ECOREGION', 'a sensitive marine area'),
-            "distance_km": min_distance * 111.32
-        }
-        print("  ✅ Analysis Complete: Found a notable proximity event.", flush=True)
-        print(f"     - Platform '{story_data['platform_name']}' is {story_data['distance_km']:.2f} km from a coral reef in the '{story_data['coral_ecoregion']}' ecoregion.", flush=True)
-        return story_data
-    else:
-        print("  - ❌ Analysis Complete: Could not find a nearby coral reef.", flush=True); return None
+            story_data = {
+                "platform_name": platform['properties'].get('Unit Name', 'Unnamed Platform'),
+                "platform_country": platform['properties'].get('Country/Area', 'an unknown location'),
+                "platform_coords": platform['geometry']['coordinates'],
+                "coral_ecoregion": closest_coral_feature['properties'].get('ECOREGION', 'a sensitive marine area'),
+                "distance_km": distance_km
+            }
+            print("  ✅ Analysis Complete: Found a notable proximity event.", flush=True)
+            print(f"     - Platform '{story_data['platform_name']}' is {story_data['distance_km']:.2f} km from a coral reef.", flush=True)
+            return story_data
+    
+    print("  - ❌ Analysis Complete: No platforms found within the 200km threshold in this run's samples.", flush=True)
+    return None
 
 def generate_insight_with_ai(story_data, client):
     print("\n--- Generating AI Insight ---", flush=True)
