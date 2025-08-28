@@ -17,16 +17,17 @@ jobs:
       - name: Run NEWS script
         env:
           AI_API_KEY: ${{ secrets.AI_API_KEY }}
+          GITHUB_EVENT_NAME: ${{ github.event_name }}
         run: python run_news_curator.py
       - name: ⬆️ Upload news_insight.json
-        uses: SamKirkland/FTP-Deploy-Action@v4.3.4
-        with:
-          server: ${{ secrets.FTP_SERVER }}
-          username: ${{ secrets.FTP_USERNAME }}
-          password: ${{ secrets.FTP_PASSWORD }}
-          protocol: ftps
-          port: 21
-          # Corrected indentation for exclude
-          exclude: |
-            **/*
-            !news_insight.json
+        run: |
+          sudo apt-get -y install lftp
+          lftp -c "
+            set ftp:ssl-force true;
+            set ftp:ssl-protect-data true;
+            set ssl:verify-certificate no;
+            open -u '${{ secrets.FTP_USERNAME }},${{ secrets.FTP_PASSWORD }}' -p 21 ${{ secrets.FTP_SERVER }};
+            cd /public_html/map-data/;
+            put -O . news_insight.json;
+            bye;
+          "
