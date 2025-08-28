@@ -13,14 +13,27 @@ LOG_FILE = 'published_headlines.log'
 OUTPUT_FILE = 'news_insight.json' # Define the output file name
 SIMILARITY_THRESHOLD = 0.9
 
+# In run_news_curator.py
+
 def get_keywords_for_today():
     """
-    Checks the current day and returns the correct list of keywords from config.json.
+    Checks the current day and returns the correct list of keywords.
+    Bypasses the date check for manual runs.
     """
-    today_weekday = datetime.utcnow().weekday()
+    # Check how the workflow was triggered
+    event_name = os.getenv('GITHUB_EVENT_NAME')
+    
     with open(CONFIG_FILE, 'r') as f:
         config = json.load(f)
+
+    # If triggered manually, run with Wednesday's keywords for testing
+    if event_name == 'workflow_dispatch':
+        print("✅ Manual run detected, bypassing date check.")
+        return config.get("wednesday_keywords", [])
+
+    today_weekday = datetime.utcnow().weekday()
     print(f"🗓️ Today's UTC weekday is {today_weekday}. (Wednesday is 2, Sunday is 6)")
+    
     if today_weekday == 2:
         print("✅ It's Wednesday, selecting news keywords.")
         return config.get("wednesday_keywords", [])
