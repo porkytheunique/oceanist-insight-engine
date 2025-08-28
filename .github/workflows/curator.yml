@@ -55,10 +55,8 @@ jobs:
 
       - name: ⬆️ Upload insight file to Server
         run: |
-          # Install the FTP client
           sudo apt-get -y install lftp
 
-          # Determine which file was created
           if [ -f "news_insight.json" ]; then
             FILE_TO_UPLOAD="news_insight.json"
           elif [ -f "fishing_insight.json" ]; then
@@ -72,10 +70,11 @@ jobs:
 
           echo "Uploading $FILE_TO_UPLOAD..."
           
-          # Run the secure FTP command
+          # This command includes the fix to bypass the certificate check
           lftp -c "
             set ftp:ssl-force true;
             set ftp:ssl-protect-data true;
+            set ssl:verify-certificate no; 
             open -u ${{ secrets.FTP_USERNAME }},${{ secrets.FTP_PASSWORD }} -p 21 ${{ secrets.FTP_SERVER }};
             cd /public_html/map-data/;
             put -O . $FILE_TO_UPLOAD;
