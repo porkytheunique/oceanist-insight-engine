@@ -134,6 +134,7 @@ def main():
     if not platform_data or not coral_data: return
 
     print("\n--- Step 2: Performing Story Analysis ---", flush=True)
+    # THIS IS THE CORRECTED LINE:
     story_data = analyze_coral_proximity(platform_data, coral_data)
     if not story_data: return
         
