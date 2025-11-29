@@ -38,8 +38,6 @@ def fetch_geospatial_data():
         coral_data = None
     return platform_data, coral_data
 
-# In run_oilgas_analyzer.py
-
 def analyze_coral_proximity(platform_data, coral_data):
     """
     Finds a random oil/gas platform that is CLOSE to a coral reef.
@@ -50,10 +48,12 @@ def analyze_coral_proximity(platform_data, coral_data):
     if not platform_features or not coral_features:
         print("  - ❌ Cannot run analysis: Missing platform or coral data.", flush=True); return None
 
-    # ... (pre-processing and index building is the same) ...
+    # Pre-process corals
     print(f"  - Pre-processing {len(coral_features)} coral reef geometries...", flush=True)
+    # Note: We already check for geometry existence here for corals
     coral_shapes = [shape(geom['geometry']) for geom in coral_features if geom.get('geometry')]
     print(f"  - Successfully processed {len(coral_shapes)} valid coral reef shapes.", flush=True)
+    
     print("  - 🗺️ Building spatial index for all coral reefs...", flush=True)
     idx = index.Index()
     valid_shapes_for_index = []
@@ -67,34 +67,45 @@ def analyze_coral_proximity(platform_data, coral_data):
     print(f"  - ✅ Spatial index built successfully with {len(valid_shapes_for_index)} valid shapes.", flush=True)
 
     # Try a few random platforms to find one that is close enough
-    for _ in range(20): # Try up to 20 times to find a close one
+    # We increase the range slightly to ensure we find a valid one if many have empty geometries
+    for _ in range(50): 
         platform = random.choice(platform_features)
-        platform_point = shape(platform['geometry'])
         
-        nearest_coral_indices_map = list(idx.nearest(platform_point.bounds, 1))
-        if not nearest_coral_indices_map:
-            continue
-            
-        mapped_idx = nearest_coral_indices_map[0]
-        original_idx = original_indices[mapped_idx]
-        distance = platform_point.distance(valid_shapes_for_index[mapped_idx])
-        distance_km = distance * 111.32
+        # --- FIX: Check if geometry exists before processing ---
+        geo_json_geom = platform.get('geometry')
+        if not geo_json_geom:
+            continue  # Skip this platform if it has no coordinates
+        # -----------------------------------------------------
 
-        # --- NEW THRESHOLD CHECK ---
-        # Only consider it a story if it's within 200 km
-        if distance_km <= 200:
-            print(f"  - Analyzing platform: '{platform['properties'].get('Unit Name', 'Unnamed')}'")
-            closest_coral_feature = coral_features[original_idx]
-            story_data = {
-                "platform_name": platform['properties'].get('Unit Name', 'Unnamed Platform'),
-                "platform_country": platform['properties'].get('Country/Area', 'an unknown location'),
-                "platform_coords": platform['geometry']['coordinates'],
-                "coral_ecoregion": closest_coral_feature['properties'].get('ECOREGION', 'a sensitive marine area'),
-                "distance_km": distance_km
-            }
-            print("  ✅ Analysis Complete: Found a notable proximity event.", flush=True)
-            print(f"     - Platform '{story_data['platform_name']}' is {story_data['distance_km']:.2f} km from a coral reef.", flush=True)
-            return story_data
+        try:
+            platform_point = shape(geo_json_geom)
+            
+            nearest_coral_indices_map = list(idx.nearest(platform_point.bounds, 1))
+            if not nearest_coral_indices_map:
+                continue
+                
+            mapped_idx = nearest_coral_indices_map[0]
+            original_idx = original_indices[mapped_idx]
+            distance = platform_point.distance(valid_shapes_for_index[mapped_idx])
+            distance_km = distance * 111.32
+
+            # Only consider it a story if it's within 200 km
+            if distance_km <= 200:
+                print(f"  - Analyzing platform: '{platform['properties'].get('Unit Name', 'Unnamed')}'")
+                closest_coral_feature = coral_features[original_idx]
+                story_data = {
+                    "platform_name": platform['properties'].get('Unit Name', 'Unnamed Platform'),
+                    "platform_country": platform['properties'].get('Country/Area', 'an unknown location'),
+                    "platform_coords": platform['geometry']['coordinates'],
+                    "coral_ecoregion": closest_coral_feature['properties'].get('ECOREGION', 'a sensitive marine area'),
+                    "distance_km": distance_km
+                }
+                print("  ✅ Analysis Complete: Found a notable proximity event.", flush=True)
+                print(f"     - Platform '{story_data['platform_name']}' is {story_data['distance_km']:.2f} km from a coral reef.", flush=True)
+                return story_data
+        except Exception as e:
+            # Catch any other geometry errors and skip
+            continue
     
     print("  - ❌ Analysis Complete: No platforms found within the 200km threshold in this run's samples.", flush=True)
     return None
@@ -104,7 +115,16 @@ def generate_insight_with_ai(story_data, client):
     platform_name = story_data['platform_name']; platform_country = story_data['platform_country']
     coral_ecoregion = story_data['coral_ecoregion']; distance_km = round(story_data['distance_km'], 1)
     platform_coords = story_data['platform_coords']
-    prompt = f"""You are a science communicator. Analyze: The '{platform_name}' oil/gas platform in {platform_country} is approx. {distance_km} km from a coral reef in the '{coral_ecoregion}' ecoregion at {platform_coords}. Create a JSON object with keys "tag" (#FossilFuels), "content" (3-4 sentences on the location, fact, and risks to reefs, using approximate language), and "map_view" (center: {platform_coords}, zoom: 8, maxZoom: 12). Return ONLY the raw JSON object."""
+    
+    # Added 'title' field instruction to prompt
+    prompt = f"""You are a science communicator. Analyze: The '{platform_name}' oil/gas platform in {platform_country} is approx. {distance_km} km from a coral reef in the '{coral_ecoregion}' ecoregion at {platform_coords}. 
+    Create a JSON object with keys:
+    "title" (a short, engaging headline, e.g., "Platform [Name] near [Region]"),
+    "tag" (#FossilFuels), 
+    "content" (3-4 sentences on the location, fact, and risks to reefs, using approximate language), 
+    and "map_view" (center: {platform_coords}, zoom: 8, maxZoom: 12). 
+    Return ONLY the raw JSON object."""
+    
     try:
         print(f"  - 🤖 Sending prompt to AI...", flush=True)
         message = client.messages.create(model="claude-sonnet-4-20250514", max_tokens=500, messages=[{"role": "user", "content": prompt}]).content[0].text
@@ -134,7 +154,6 @@ def main():
     if not platform_data or not coral_data: return
 
     print("\n--- Step 2: Performing Story Analysis ---", flush=True)
-    # THIS IS THE CORRECTED LINE:
     story_data = analyze_coral_proximity(platform_data, coral_data)
     if not story_data: return
         
